@@ -1,7 +1,8 @@
 # Forgejo Actions pipeline for codeberg.org/Archaejon/Guidebook.
 #
-# Runs on Codeberg's shared runners. The job uses the official Node 20 image
-# (same major version the project is built and developed on), which already
+# Runs on Codeberg's shared runners. The job uses the official Node 20 image,
+# the oldest major line the README supports, so CI catches anything that would
+# break for users below the development machine's Node 22. That image already
 # carries the git client the checkout action needs.
 name: CI
 
