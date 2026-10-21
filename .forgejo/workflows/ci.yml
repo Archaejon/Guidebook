@@ -1,0 +1,37 @@
+# Forgejo Actions pipeline for codeberg.org/Archaejon/Guidebook.
+#
+# Runs on Codeberg's shared runners. The job uses the official Node 20 image
+# (same major version the project is built and developed on), which already
+# carries the git client the checkout action needs.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: codeberg-small
+    container:
+      image: node:20-bookworm
+    steps:
+      - name: Check out the repository
+        uses: https://code.forgejo.org/actions/checkout@v4
+
+      - name: Show tool versions
+        run: |
+          node --version
+          npm --version
+
+      - name: Install dependencies from the lockfile
+        run: npm ci
+
+      # Kept as separate steps so a failure names the phase that broke.
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build

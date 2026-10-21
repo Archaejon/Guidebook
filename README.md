@@ -101,6 +101,12 @@ Manuscript passages reference methods with `[[method:<id>|Label]]`, resolved liv
 
 `src/lib/__tests__/fixture.ts` builds the project the tests share. Its comments record why each record exists (a published method, a draft that is reachable only by inline reference, a relationship pointing at a deleted id, an old experiment for date filters). Extend it rather than building ad-hoc projects in individual tests.
 
+## Continuous integration
+
+[`.forgejo/workflows/ci.yml`](.forgejo/workflows/ci.yml) runs on every push and pull request on Codeberg: a `codeberg-small` shared runner starts the official `node:20-bookworm` image, checks out the repository, then runs `npm ci`, `npm run typecheck`, `npm test` and `npm run build` as separate steps, so a failure names the phase that broke. Runs are listed under the repository's **Actions** tab.
+
+This exists to keep the published branch honest. The suite is only useful if it runs without a human remembering to run it, and the typecheck catches the class of mistake (`noUnusedLocals`, unused test helpers, stale imports) that a browser smoke test will not.
+
 ## Behaviour worth knowing
 
 - **Search** (`/search`, or `/` from anywhere) groups results by entity type with per-type filters and status/tag/date filters.
