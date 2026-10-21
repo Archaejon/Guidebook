@@ -259,7 +259,72 @@ img { max-width: 100%; }
 }
 
 .main-content { margin-left: 274px; min-height: 100vh; }
+.main-content:focus { outline: none; }
 .mobile-topbar, .bottom-nav, .drawer { display: none; }
+
+/* ---------- Release-critical chrome: skip link, save warning, crash recovery ---------- */
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -80px;
+  z-index: 400;
+  padding: 10px 16px;
+  background: var(--ink);
+  color: #f7f1e5;
+  font-size: 12px;
+  border-radius: 2px;
+  text-decoration: none;
+  transition: top 0.15s ease;
+}
+.skip-link:focus { top: 12px; }
+.save-warning {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 22px;
+  background: var(--danger-wash);
+  border-bottom: 1px solid #dcbfb6;
+  color: #6d2a22;
+}
+.save-warning svg { flex: none; margin-top: 2px; }
+.save-warning p { margin: 0; font-size: 12px; line-height: 1.55; max-width: 900px; }
+.save-warning a { color: inherit; font-weight: 600; }
+@media (prefers-reduced-motion: reduce) {
+  .skip-link { transition: none; }
+}
+
+.crash-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 40px 20px;
+  background: var(--paper);
+}
+.crash-card {
+  width: min(640px, 100%);
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  padding: 32px 34px 26px;
+  box-shadow: 0 18px 50px rgba(60, 48, 30, 0.08);
+}
+.crash-card h1 { font-size: clamp(24px, 3vw, 30px); line-height: 1.15; margin: 0 0 12px; }
+.crash-card > p { font-size: 13px; line-height: 1.65; color: var(--ink-soft); margin: 0 0 12px; }
+.crash-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0 14px; }
+.crash-status { font-size: 12px; color: var(--success); }
+.crash-note { border-top: 1px solid var(--line); padding-top: 14px; font-size: 11.5px; color: var(--muted); }
+.crash-detail { margin-top: 12px; font-size: 11.5px; color: var(--muted); }
+.crash-detail summary { cursor: pointer; }
+.crash-detail pre {
+  margin: 8px 0 0;
+  padding: 10px;
+  background: var(--paper-deep);
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
 .page { max-width: var(--max); margin: 0 auto; padding: 44px 48px 90px; }
 .page-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 28px; margin-bottom: 30px; }
 .page-header-main { max-width: 760px; }

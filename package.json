@@ -1,9 +1,21 @@
 {
   "name": "guidebook-for-the-future",
+  "description": "A local-first authoring environment for an interdisciplinary guide to human and collective flourishing.",
   "private": true,
   "license": "(MIT AND CC-BY-SA-4.0)",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
+  "homepage": "https://archaejon.codeberg.page/Guidebook/",
+  "repository": {
+    "type": "git",
+    "url": "https://codeberg.org/Archaejon/Guidebook.git"
+  },
+  "bugs": {
+    "url": "https://codeberg.org/Archaejon/Guidebook/issues"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5173",
     "build": "tsc --noEmit && vite build",
@@ -11,19 +23,20 @@
     "preview": "vite preview --host 127.0.0.1 --port 5174",
     "typecheck": "tsc --noEmit --pretty false",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "verify": "npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.30.0"
+    "react-router-dom": "^7.18.4"
   },
   "devDependencies": {
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
-    "@vitejs/plugin-react": "^4.3.4",
+    "@vitejs/plugin-react": "^5.2.0",
     "typescript": "^5.7.3",
-    "vite": "^5.4.14",
-    "vitest": "^2.1.9"
+    "vite": "^7.3.7",
+    "vitest": "^4.1.12"
   }
 }

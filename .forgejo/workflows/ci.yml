@@ -2,8 +2,9 @@
 #
 # Runs on Codeberg's shared runners. The job uses the official Node 20 image,
 # the oldest major line the README supports, so CI catches anything that would
-# break for users below the development machine's Node 22. That image already
-# carries the git client the checkout action needs.
+# break for users below the development machine's Node 22. That image tracks the
+# latest 20.x, which satisfies Vite 7's 20.19+ floor, and already carries the
+# git client the checkout action needs.
 name: CI
 
 on:
@@ -26,6 +27,12 @@ jobs:
 
       - name: Install dependencies from the lockfile
         run: npm ci
+
+      # Only the dependencies that ship to a browser. The test runner and build
+      # tooling are never served, so an advisory in them is a development risk
+      # to review, not a reason to block a release of the site.
+      - name: Audit shipped dependencies
+        run: npm audit --omit=dev
 
       # Kept as separate steps so a failure names the phase that broke.
       - name: Typecheck

@@ -20,7 +20,7 @@ Most of the design follows from four constraints. A change that breaks one of th
 
 ## Getting set up
 
-You need **Node.js 20 LTS or newer** and the npm that ships with it. Nothing else — no database, no containers, no accounts.
+You need **Node.js 20.19+ or 22.12+** (the range Vite 7 supports) and the npm that ships with it. Nothing else — no database, no containers, no accounts.
 
 ```bash
 npm ci                # install exactly what the lockfile pins
@@ -31,7 +31,13 @@ React 18 + TypeScript + Vite, with `react-router-dom` for routing. If you are ch
 
 ## Before you open a pull request
 
-Run the same four checks the project's CI runs (`.forgejo/workflows/ci.yml`):
+Run the same checks the project's CI runs (`.forgejo/workflows/ci.yml`). One command runs all of them:
+
+```bash
+npm run verify        # typecheck, then Vitest, then a production build
+```
+
+or, step by step, when you want to see which phase failed:
 
 ```bash
 npm run typecheck     # tsc --noEmit
@@ -39,13 +45,15 @@ npm test              # Vitest, no DOM, about a second
 npm run build         # tsc --noEmit && vite build
 ```
 
+If you changed dependencies, also run `npm audit`, and notice that a clean audit is part of what makes a release releasable ([RELEASING.md](RELEASING.md)).
+
 Plus, if your change is user-visible, look at it: `npm run dev` and click through the affected page at both a wide and a narrow viewport. A green build proves the code compiles, not that the page renders.
 
 Codeberg requires Actions to be enabled on the repository before those checks run automatically, so do not assume CI will catch something you skipped locally.
 
 ## Tests
 
-The suite lives in `src/lib/__tests__` and covers the pure logic only — selectors, search and export generation. Those are the parts where cross-record invariants bite: a link surviving deletion, a subtree moving, an export staying complete.
+The suite lives in `src/lib/__tests__` and covers the pure logic only — selectors, search, export generation and page-title derivation. Those are the parts where cross-record invariants bite: a link surviving deletion, a subtree moving, an export staying complete.
 
 - Put new tests next to the code they exercise, as `*.test.ts`.
 - **Extend [the shared fixture](src/lib/__tests__/fixture.ts) rather than building a project inline.** Its comments explain why each record exists (a published method, a draft reachable only by an inline reference, a relationship pointing at a deleted id, a deliberately old experiment). A fixture record that no test explains is a record nobody understands.
@@ -55,7 +63,7 @@ The suite lives in `src/lib/__tests__` and covers the pure logic only — select
 ## Code conventions
 
 - TypeScript strict mode, with `noUnusedLocals` and `noUnusedParameters` on. Do not silence them with `any` or suppression comments; fix the cause.
-- Function components and hooks. No class components, no state library — the store is a context provider in `src/store.tsx`.
+- Function components and hooks. No class components, with one deliberate exception: the root `ErrorBoundary` in `src/components/ErrorBoundary.tsx`, because `componentDidCatch` only exists on classes. No state library — the store is a context provider in `src/store.tsx`.
 - Styling goes in `src/styles.css`, next to the existing selectors. There is no CSS-in-JS and no utility framework; adding one is a project decision, not a detail of a bug fix.
 - Pure logic belongs in `src/lib` and should stay free of React, so it can be tested without a DOM. Pages compose; `lib` decides.
 - Records are referenced by stable string ids, relationships are `{ fromId, toId, type, note }`, and manuscript passages cite methods with `[[method:<id>|Label]]` tokens resolved live. Never store a denormalised copy of another record's text.

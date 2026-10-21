@@ -42,6 +42,28 @@ function SaveIndicator() {
   );
 }
 
+/**
+ * A failed write means the visible project and the stored project have started
+ * to diverge, which is the one failure a local-first app must never hide. The
+ * sidebar indicator is inside the drawer on narrow screens, so this banner is
+ * the version that cannot be missed.
+ */
+function SaveWarning() {
+  const { saveState, lastSavedAt } = useStore();
+  if (saveState !== 'error') return null;
+  return (
+    <div className="save-warning" role="alert">
+      <Icon name="alert" size={16} />
+      <p>
+        <strong>Changes are not being saved.</strong> This browser refused the last write — usually a
+        full storage quota or private browsing.{' '}
+        {lastSavedAt ? `Last successful save ${relativeTime(lastSavedAt)}. ` : ''}
+        Export a JSON backup from <Link to="/settings">Settings</Link> before closing this tab.
+      </p>
+    </div>
+  );
+}
+
 function NavItem({
   to,
   label,
@@ -189,7 +211,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
   if (focusMode) {
     return (
       <div className="focus-shell">
-        <main className="focus-main">{children}</main>
+        <main className="focus-main" id="main">
+          <SaveWarning />
+          {children}
+        </main>
         <ToastHost />
       </div>
     );
@@ -197,6 +222,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#main">
+        Skip to content
+      </a>
       <aside className="sidebar">
         <SidebarContent />
       </aside>
@@ -226,7 +254,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </button>
       </header>
 
-      <main className="main-content" id="main">
+      <main className="main-content" id="main" tabIndex={-1}>
+        <SaveWarning />
         {children}
       </main>
 

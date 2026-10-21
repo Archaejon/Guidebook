@@ -18,6 +18,7 @@ import { InboxPage } from './pages/Inbox';
 import { SettingsPage } from './pages/Settings';
 import { ReaderPage } from './pages/Reader';
 import { EmptyState } from './components/ui';
+import { RouteTitle } from './components/RouteTitle';
 import { useStore } from './store';
 
 /**
@@ -59,6 +60,7 @@ function NotFoundPage() {
 export default function App() {
   return (
     <WorkspaceGate>
+      <RouteTitle />
       <Routes>
       <Route path="/read" element={<ReaderPage />} />
       <Route

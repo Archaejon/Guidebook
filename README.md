@@ -6,8 +6,10 @@ Understand → Practise → Evaluate → Teach.
 
 ## Prerequisites
 
-- **Node.js 20 LTS or newer** (Vite 5 needs Node 18.18+, and 20 LTS is what this was built and tested on)
-- **npm 10+**, which ships with Node 20
+- **Node.js 20.19+ or 22.12+** (the range Vite 7 supports; 22 is what this was built and tested on)
+- **npm 10+**, which ships with Node 20 and later
+
+`package.json` declares the same range under `engines`, so npm warns early rather than failing inside a build.
 
 No database, server, or third-party account is required.
 
@@ -23,11 +25,12 @@ npm ci               # reproducible install from package-lock.json
 ```bash
 npm run dev          # http://127.0.0.1:5173
 npm run typecheck    # tsc --noEmit
-npm test             # Vitest: selectors, search, exports
+npm test             # Vitest: selectors, search, exports, page titles
 npm run test:watch   # re-run tests on change
+npm run verify       # typecheck + tests + production build, i.e. what CI runs
 ```
 
-React 18 + TypeScript + Vite, `react-router-dom` for routes. No backend, no accounts, no network calls at runtime.
+React 18 + TypeScript + Vite 7, `react-router-dom` 7 for routes. No backend, no accounts, no network calls at runtime.
 
 ## Configuration
 
@@ -84,9 +87,11 @@ src/
     selectors.ts      hierarchy, entity lookup, incoming/outgoing relationships
     search.ts         cross-entity search and filtering
     exports.ts        Markdown/plain text/HTML/JSON generation
+    pageTitle.ts      browser-tab titles derived from the page heading
     utils.ts          markdown helpers, word count, downloadFile
     __tests__/        Vitest suite + the shared project fixture
-  components/         Layout, ui primitives (Modal, ConfirmDialog, LinkDialog), Markdown, create dialogs
+  components/         Layout, RouteTitle, ErrorBoundary, ui primitives (Modal, ConfirmDialog,
+                      LinkDialog), Markdown, create dialogs
   pages/              Home, Guide, MethodPage, MethodEditor, Studio, Research, SourceDetail,
                       ResearchEditor, NoteEditor, Connections, Experiments, Scales, SearchPage,
                       Inbox, Settings, Reader
@@ -108,11 +113,17 @@ Manuscript passages reference methods with `[[method:<id>|Label]]`, resolved liv
 - **`search.test.ts`** — the ranking ladder (exact title > partial title > tag > body), case/whitespace handling, every filter including date ranges, the 150-result cap, excerpt centring, and the invariant that every result points at a resolvable record and its canonical route.
 - **`exports.test.ts`** — Markdown rendering and escaping (raw HTML in a title must not become markup), manuscript heading order and draft exclusion, plain-text stripping, method and library Markdown, bibliography and unverified-claim output, and the Published-only boundary of the reader HTML.
 
+`src/lib/__tests__/pageTitle.test.ts` covers the browser-tab titles: heading-first ordering, whitespace collapsing, and the fallback when a page has no heading yet.
+
 `src/lib/__tests__/fixture.ts` builds the project the tests share. Its comments record why each record exists (a published method, a draft that is reachable only by inline reference, a relationship pointing at a deleted id, an old experiment for date filters). Extend it rather than building ad-hoc projects in individual tests.
+
+## Releases
+
+Releases are tagged `vX.Y.Z` on `main`, with the changes described in [CHANGELOG.md](CHANGELOG.md). [RELEASING.md](RELEASING.md) is the runbook: version policy, the checks to run, tagging, deploying the `pages` branch, and how to verify the live site rather than assuming a push published it. The tag is only a marker — the site is published by `scripts/deploy-pages.sh`, and only after the Pages webhook exists.
 
 ## Continuous integration
 
-[`.forgejo/workflows/ci.yml`](.forgejo/workflows/ci.yml) runs on every push and pull request on Codeberg: a `codeberg-small` shared runner starts the official `node:20-bookworm` image, checks out the repository, then runs `npm ci`, `npm run typecheck`, `npm test` and `npm run build` as separate steps, so a failure names the phase that broke. Runs are listed under the repository's **Actions** tab.
+[`.forgejo/workflows/ci.yml`](.forgejo/workflows/ci.yml) runs on every push and pull request on Codeberg: a `codeberg-small` shared runner starts the official `node:20-bookworm` image, checks out the repository, then runs `npm ci`, `npm audit --omit=dev`, `npm run typecheck`, `npm test` and `npm run build` as separate steps, so a failure names the phase that broke. Runs are listed under the repository's **Actions** tab.
 
 This exists to keep the published branch honest. The suite is only useful if it runs without a human remembering to run it, and the typecheck catches the class of mistake (`noUnusedLocals`, unused test helpers, stale imports) that a browser smoke test will not.
 
@@ -127,6 +138,8 @@ Repository Actions are disabled by default on Codeberg, so a maintainer has to t
 - **Export** produces full JSON backup, manuscript Markdown, plain text, method library, sources & references, and a Published-only reader HTML. Import accepts a JSON backup and snapshots the current state first.
 - **Import .md** in the Studio toolbar appends a Markdown or plain-text file to the open document as one undoable step; a leading `# Heading` becomes the document title when the document is still blank.
 - **Backup points** are local snapshots (not cloud), created manually or automatically before a reset/import/restore.
+- **A refused write is announced.** If the browser will not persist a change (full quota, private browsing), a banner says so on every screen and points at the JSON export — the sidebar indicator is behind the drawer on a phone, so it cannot be the only signal.
+- **A render error still lets you escape.** A root error boundary replaces the page with a recovery screen that exports the stored project as a normal, re-importable JSON backup before suggesting a reload.
 - **Links never resolve to ghosts.** A relationship whose other end no longer exists is invisible from both ends, so deleting a record cannot leave a clickable dead link behind.
 
 ## Sample content
