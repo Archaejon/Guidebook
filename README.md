@@ -116,7 +116,7 @@ Manuscript passages reference methods with `[[method:<id>|Label]]`, resolved liv
 
 This exists to keep the published branch honest. The suite is only useful if it runs without a human remembering to run it, and the typecheck catches the class of mistake (`noUnusedLocals`, unused test helpers, stale imports) that a browser smoke test will not.
 
-Repository Actions are disabled by default on Codeberg, so a maintainer has to tick **Settings → Units → Enable Actions** once before jobs will be scheduled. Codeberg's hosted runners also require the project to be public and carried under a free/libre licence, which is why this repository is MIT-licensed.
+Repository Actions are disabled by default on Codeberg, so a maintainer has to tick **Settings → Units → Enable Actions** once before jobs will be scheduled. Codeberg's hosted runners also require the project to be public and under a free/libre licence; the code is MIT and the written content CC BY-SA 4.0, so both halves qualify.
 
 ## Behaviour worth knowing
 
