@@ -9,6 +9,10 @@ name: CI
 
 on:
   push:
+    # `pages` holds build output only: there is no package.json there, so a run
+    # on that branch would fail on `npm ci` and report a broken deploy that
+    # isn't broken. It is verified by the deploy workflow instead.
+    branches: [main]
   pull_request:
 
 jobs:

@@ -51,6 +51,8 @@ Plus, if your change is user-visible, look at it: `npm run dev` and click throug
 
 Codeberg requires Actions to be enabled on the repository before those checks run automatically, so do not assume CI will catch something you skipped locally.
 
+Merging to `main` also publishes the site: the Deploy Pages workflow builds it, pushes the result to the `pages` branch, and verifies that the branch holds exactly that build. Pull requests only run the checks — nothing is published from a branch or a fork.
+
 ## Tests
 
 The suite lives in `src/lib/__tests__` and covers the pure logic only — selectors, search, export generation and page-title derivation. Those are the parts where cross-record invariants bite: a link surviving deletion, a subtree moving, an export staying complete.

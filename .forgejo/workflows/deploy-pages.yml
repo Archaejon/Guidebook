@@ -1,0 +1,68 @@
+# Publishes the built site to the `pages` branch on every push to `main`, then
+# proves the published branch holds that build.
+#
+# Separate from ci.yml on purpose: CI answers "is this commit good?", this
+# answers "is the site serving it?". It repeats typecheck and tests rather than
+# trusting that ci.yml ran and passed, because publishing untested code is worse
+# than a duplicated test run. Both finish well inside the 5-minute limit of the
+# `codeberg-small` runner.
+#
+# Two one-time manual settings are still required, and neither is something a
+# workflow can do for itself:
+#   * Repository Actions enabled (Settings → Units → Enable Actions).
+#   * A Pages webhook for https://archaejon.codeberg.page/Guidebook/ with branch
+#     filter `pages`. Without it the push succeeds and nothing is served — the
+#     site keeps answering HTTP 400.
+name: Deploy Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: codeberg-small
+    container:
+      image: node:20-bookworm
+    steps:
+      - name: Check out the repository
+        uses: https://code.forgejo.org/actions/checkout@v4
+
+      - name: Show tool versions
+        run: |
+          node --version
+          npm --version
+          git --version
+
+      - name: Install dependencies from the lockfile
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build for the project-site prefix
+        run: npm run build:pages
+
+      # The push authenticates with the credentials actions/checkout persisted
+      # for this job, so no token is placed in a URL, a file or a log line.
+      - name: Publish to the pages branch
+        run: node scripts/publish-pages.mjs --dist dist
+
+      # Independent of the publish step: fetch the branch again and require its
+      # tree to be identical to the build. A deploy that silently served stale
+      # output would fail here.
+      - name: Verify the published branch matches the build
+        run: node scripts/publish-pages.mjs --dist dist --verify-only
+
+      - name: Report what was published
+        run: |
+          echo "source commit: $(git rev-parse HEAD)"
+          echo "pages branch:  $(git ls-remote --heads origin pages | cut -f1)"

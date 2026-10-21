@@ -8,10 +8,10 @@ to conflate:
 3. **A deployment** — the built files on the `pages` branch that Codeberg Pages
    serves.
 
-Nothing automates the last two. The tag does not publish anything, and the
-`pages` branch is built by hand with `scripts/deploy-pages.sh`. This file is the
-order in which to do them, so the thing people download is the thing that was
-tested.
+The deployment is automatic: any push to `main` publishes it (see
+[Deploying](#deploying)). The tag is not: it is still a deliberate step, because
+tagging every main commit would make the tag meaningless. This file is the order
+in which to do them, so the thing people download is the thing that was tested.
 
 ## Version numbers
 
@@ -59,15 +59,31 @@ at that moment.
 
 ## Deploying
 
+Publishing is automatic. Every push to `main` runs
+[`.forgejo/workflows/deploy-pages.yml`](.forgejo/workflows/deploy-pages.yml),
+which installs, typechecks, tests, builds with `--mode pages`, publishes the
+result to `pages`, then fetches that branch back and compares its git tree with
+`dist`. The run fails unless the branch holds exactly the build, so a green run
+is evidence that the published files match the commit — not merely that a script
+exited zero.
+
+A release therefore ends with a push to `main` and a look at the **Deploy Pages**
+run under the repository's Actions tab. It reports the source commit and the
+resulting `pages` commit.
+
+For a local deploy — a host without Actions, or a checkout that must publish out
+of band — the same publisher runs directly:
+
 ```bash
 bash scripts/deploy-pages.sh
 ```
 
-The script refuses to run on a dirty tree, builds with `--mode pages`, copies the
-result onto the `pages` branch and fast-forwards it. It prints either the pushed
-commit or `published files are unchanged`.
+It refuses to run on a dirty tree, so the published branch always corresponds to
+a commit, and it prints either the new `pages` commit or `published files are
+unchanged`. To re-check an already published branch against a local build without
+pushing: `node scripts/publish-pages.mjs --dist dist --verify-only`.
 
-Then check the live site rather than trusting the push:
+Then check the live site rather than trusting the run:
 
 - `https://archaejon.codeberg.page/Guidebook/` answers 200 and renders the home
   page — not a blank page, and not Codeberg's 404.
@@ -79,19 +95,25 @@ Then check the live site rather than trusting the push:
 - Local data survives: open the site, add a note, reload, and confirm it is still
   there. This exercises IndexedDB on the real origin, which local builds do not.
 
+Codeberg Pages caches small files for a few minutes, so a change deployed seconds
+ago can briefly serve the previous asset. Re-check before concluding a deploy
+failed.
+
 ## If a deploy is wrong
 
-The `pages` branch is disposable. Rebuild from the last good commit and push
-again; nothing is rewritten in `main`:
+If the fault is in `main`, fix it forward: the next push republishes, and the
+failed run stays visible in Actions. Do not edit the `pages` branch by hand — the
+next deploy replaces its contents.
+
+To put an earlier build back while a fix is prepared, publish from that commit
+locally. This is deliberately a stopgap: the next push to `main` republishes
+`main`, so the rollback only lasts until then unless `main` is reverted too.
 
 ```bash
 git switch --detach <last-good-commit>
 bash scripts/deploy-pages.sh
 git switch main
 ```
-
-If the fault is in `main`, fix it forward with a patch release. Do not edit the
-`pages` branch by hand — the next deploy replaces its contents.
 
 ## After a release
 

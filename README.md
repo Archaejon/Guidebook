@@ -58,13 +58,20 @@ Two things to get right:
 
 This repository is published as a project site at **https://archaejon.codeberg.page/Guidebook/**, from the `pages` branch.
 
+Every push to `main` deploys automatically: [`.forgejo/workflows/deploy-pages.yml`](.forgejo/workflows/deploy-pages.yml) installs, typechecks, tests, builds with `--mode pages`, publishes to `pages`, then fetches the branch back and compares its git tree with `dist` — a deploy that served stale or incomplete output would fail the run instead of looking successful. Pull requests never deploy; only `main` does.
+
+For a local deploy, the same code runs from a checkout:
+
 ```bash
-bash scripts/deploy-pages.sh   # build:pages, then commit and push the pages branch
+bash scripts/deploy-pages.sh   # build:pages, then publish and verify the pages branch
 ```
+
+Both paths call [scripts/publish-pages.mjs](scripts/publish-pages.mjs), which needs no credentials of its own: locally it uses your SSH remote, and in Actions it uses the token that `actions/checkout` already persisted for the job. `node scripts/publish-pages.mjs --dist dist --verify-only` checks a published branch against a local build without pushing anything.
 
 `npm run build:pages` is the one non-obvious part: it builds with `--mode pages`, which sets `base` to `/Guidebook/` in `vite.config.ts`, and then copies `index.html` to `404.html`. That copy is a fallback for deep links, because whether Codeberg Pages applies a `_redirects` rewrite inside a project-site prefix is not documented; the shell costs 900 bytes and makes `/Guidebook/studio` work either way.
 
-Codeberg Pages only publishes a branch once a **Forgejo webhook** points at the site URL, so a first-time deploy needs this in the repository settings: **Settings → Webhooks → Add webhook → Forgejo**, target `https://archaejon.codeberg.page/Guidebook/`, branch filter `pages`.
+Codeberg Pages only publishes a branch once a **Forgejo webhook** points at the site URL, so a first-time deploy needs this in the repository settings: **Settings → Webhooks → Add webhook → Forgejo**, target `https://archaejon.codeberg.page/Guidebook/`, branch filter `pages`. Until that webhook exists, a deploy pushes to `pages` successfully and the site still answers HTTP 400. Repository **Actions** must also be enabled (Settings → Units → Enable Actions) for the deploy workflow to run at all.
+
 ## Storage and privacy
 
 - The whole project is a single JSON document persisted to **IndexedDB** (`guidebook-future`) with a **localStorage** fallback (`src/lib/storage.ts`).
@@ -119,11 +126,11 @@ Manuscript passages reference methods with `[[method:<id>|Label]]`, resolved liv
 
 ## Releases
 
-Releases are tagged `vX.Y.Z` on `main`, with the changes described in [CHANGELOG.md](CHANGELOG.md). [RELEASING.md](RELEASING.md) is the runbook: version policy, the checks to run, tagging, deploying the `pages` branch, and how to verify the live site rather than assuming a push published it. The tag is only a marker — the site is published by `scripts/deploy-pages.sh`, and only after the Pages webhook exists.
+Releases are tagged `vX.Y.Z` on `main`, with the changes described in [CHANGELOG.md](CHANGELOG.md). [RELEASING.md](RELEASING.md) is the runbook: version policy, the checks to run, tagging, deploying the `pages` branch, and how to verify the live site rather than assuming a push published it. The tag is only a marker: the site is published by the deploy workflow on every push to `main`, and Codeberg serves it only once the Pages webhook exists.
 
 ## Continuous integration
 
-[`.forgejo/workflows/ci.yml`](.forgejo/workflows/ci.yml) runs on every push and pull request on Codeberg: a `codeberg-small` shared runner starts the official `node:20-bookworm` image, checks out the repository, then runs `npm ci`, `npm audit --omit=dev`, `npm run typecheck`, `npm test` and `npm run build` as separate steps, so a failure names the phase that broke. Runs are listed under the repository's **Actions** tab.
+[`.forgejo/workflows/ci.yml`](.forgejo/workflows/ci.yml) runs on every push to `main` and every pull request on Codeberg: a `codeberg-small` shared runner starts the official `node:20-bookworm` image, checks out the repository, then runs `npm ci`, `npm audit --omit=dev`, `npm run typecheck`, `npm test` and `npm run build` as separate steps, so a failure names the phase that broke. Runs are listed under the repository's **Actions** tab.
 
 This exists to keep the published branch honest. The suite is only useful if it runs without a human remembering to run it, and the typecheck catches the class of mistake (`noUnusedLocals`, unused test helpers, stale imports) that a browser smoke test will not.
 

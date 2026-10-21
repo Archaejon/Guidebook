@@ -11,6 +11,19 @@ The version here is the version of the *software*. The sample project also
 carries its own numeric data-format version (`Project.version`); that only moves
 when the stored shape changes, together with a migration.
 
+## [Unreleased]
+
+### Added
+
+- **Automated deploys with a matching check.**
+  [`.forgejo/workflows/deploy-pages.yml`](.forgejo/workflows/deploy-pages.yml)
+  builds every push to `main`, publishes it to the `pages` branch, then fetches
+  that branch back and compares its git tree with `dist`; the run fails unless the
+  published files are exactly the build. `scripts/publish-pages.mjs` performs the
+  publish and the check, and `scripts/deploy-pages.sh` now calls it too, so the
+  local and automated deploys share one implementation instead of drifting apart.
+  Both need the one-time Pages webhook and repository Actions to be enabled.
+
 ## [1.0.0] — 2026-10-21
 
 The first release: a complete local-first authoring environment, published as a
