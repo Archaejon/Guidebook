@@ -107,6 +107,8 @@ Manuscript passages reference methods with `[[method:<id>|Label]]`, resolved liv
 
 This exists to keep the published branch honest. The suite is only useful if it runs without a human remembering to run it, and the typecheck catches the class of mistake (`noUnusedLocals`, unused test helpers, stale imports) that a browser smoke test will not.
 
+Repository Actions are disabled by default on Codeberg, so a maintainer has to tick **Settings → Units → Enable Actions** once before jobs will be scheduled. Codeberg's hosted runners also require the project to be public and carried under a free/libre licence, which is why this repository is MIT-licensed.
+
 ## Behaviour worth knowing
 
 - **Search** (`/search`, or `/` from anywhere) groups results by entity type with per-type filters and status/tag/date filters.
@@ -121,3 +123,7 @@ This exists to keep the published branch honest. The suite is only useful if it 
 ## Sample content
 
 The five domains, their sections, three methods (Strength Training, Reflective Journalling, Community Gardening), two research sources, a reading note, a quotation, two claims, one manuscript section and one experiment are **illustrative**. They are labelled `SAMPLE` and deliberately contain no invented citations, quotations or efficacy claims; anything unresolved is marked as a question or an unverified claim. Every record is editable and deletable, and Settings can restore the sample or start from an empty project.
+
+## Licence
+
+MIT — see [LICENSE](LICENSE). The sample content is illustrative placeholder text and carries the same licence as the code.
