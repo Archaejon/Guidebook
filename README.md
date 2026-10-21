@@ -133,6 +133,10 @@ Repository Actions are disabled by default on Codeberg, so a maintainer has to t
 
 The five domains, their sections, three methods (Strength Training, Reflective Journalling, Community Gardening), two research sources, a reading note, a quotation, two claims, one manuscript section and one experiment are **illustrative**. They are labelled `SAMPLE` and deliberately contain no invented citations, quotations or efficacy claims; anything unresolved is marked as a question or an unverified claim. Every record is editable and deletable, and Settings can restore the sample or start from an empty project.
 
+## Contributing
+
+Issues and pull requests are welcome on [Codeberg](https://codeberg.org/Archaejon/Guidebook). [CONTRIBUTING.md](CONTRIBUTING.md) covers setup, the four checks to run before opening a pull request, the test conventions, and the constraints the project will not trade away (no network at runtime, data stays in the browser, drafts never reach a published surface, no invented scholarship).
+
 ## Licence
 
 MIT — see [LICENSE](LICENSE). The sample content is illustrative placeholder text and carries the same licence as the code.
