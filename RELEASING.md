@@ -57,6 +57,17 @@ git push origin v1.1.0
 point at the commit that contains the changelog entry, which does not exist yet
 at that moment.
 
+Pushing the tag is what publishes the release entry. The **Release** workflow
+([`.forgejo/workflows/release.yml`](.forgejo/workflows/release.yml)) reads the
+`## [1.1.0]` section from [CHANGELOG.md](CHANGELOG.md) and creates the release on
+Codeberg, with the live site linked at the end. It refuses a tag whose version
+disagrees with `package.json`, and re-running it updates the existing entry
+rather than creating a second one. To see the notes before tagging:
+
+```bash
+RELEASE_TAG=v1.1.0 node scripts/create-release.mjs --dry-run
+```
+
 ## Deploying
 
 Publishing is automatic. Every push to `main` runs

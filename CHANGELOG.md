@@ -67,6 +67,12 @@ static site with no backend to run and no account to create.
 - **CI no longer runs on `pages`.** That branch holds build output with no
   `package.json`, so every deploy used to produce a failed CI run that was not a
   failure; the deploy workflow verifies that branch instead.
+- **Releases from tags.**
+  [`.forgejo/workflows/release.yml`](.forgejo/workflows/release.yml) turns a `v*`
+  tag into the Codeberg release entry: `scripts/create-release.mjs` takes the
+  notes from the matching changelog section, links the live site, refuses a tag
+  that disagrees with `package.json`, and updates an existing entry instead of
+  duplicating it when re-run.
 
 ### Fixed
 

@@ -1,0 +1,37 @@
+# Creates the Codeberg release entry for a version tag.
+#
+# `git push origin v1.2.3` is the whole release: this job takes the notes from
+# CHANGELOG.md for that version and publishes them as the release. The script is
+# idempotent, so re-running a failed job updates the entry instead of
+# duplicating it, and it refuses a tag whose version disagrees with
+# package.json.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to publish, for example v1.0.0'
+        required: true
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: codeberg-small
+    container:
+      image: node:20-bookworm
+    steps:
+      - name: Check out the tagged commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Publish the release
+        env:
+          FORGEJO_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: node scripts/create-release.mjs
