@@ -30,6 +30,16 @@ when the stored shape changes, together with a migration.
   `package.json`, so every deploy used to produce a failed CI run that was not a
   failure; the deploy workflow verifies that branch instead.
 
+### Fixed
+
+- **Deep links 404 on the live site.** Codeberg Pages rejected the unprefixed
+  `/* /index.html 200` rewrite with "invalid redirect": git-pages resolves the
+  target as an absolute URL and strips the project prefix from it, so the rule
+  has to name `/Guidebook/index.html`. `public/_redirects` is gone and
+  `scripts/pages-postbuild.mjs` now writes the rule from the same prefix Vite
+  builds with, after checking the shell really loads assets from it. Local
+  servers ignore `_redirects`, which is why this only appeared on the real host.
+
 ## [1.0.0] — 2026-10-21
 
 The first release: a complete local-first authoring environment, published as a
