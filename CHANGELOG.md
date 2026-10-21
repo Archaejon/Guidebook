@@ -13,33 +13,6 @@ when the stored shape changes, together with a migration.
 
 ## [Unreleased]
 
-### Added
-
-- **Automated deploys with a matching check.**
-  [`.forgejo/workflows/deploy-pages.yml`](.forgejo/workflows/deploy-pages.yml)
-  builds every push to `main`, publishes it to the `pages` branch, then fetches
-  that branch back and compares its git tree with `dist`; the run fails unless the
-  published files are exactly the build. `scripts/publish-pages.mjs` performs the
-  publish and the check, and `scripts/deploy-pages.sh` now calls it too, so the
-  local and automated deploys share one implementation instead of drifting apart.
-  The Pages build writes `deploy.txt` naming its source commit, so the live site
-  can be traced to a commit from the outside, and the publisher refuses a build
-  whose marker names a different commit — a stale `dist` cannot be deployed.
-  Both paths need the one-time Pages webhook and repository Actions to be enabled.
-- **CI no longer runs on `pages`.** That branch holds build output with no
-  `package.json`, so every deploy used to produce a failed CI run that was not a
-  failure; the deploy workflow verifies that branch instead.
-
-### Fixed
-
-- **Deep links 404 on the live site.** Codeberg Pages rejected the unprefixed
-  `/* /index.html 200` rewrite with "invalid redirect": git-pages resolves the
-  target as an absolute URL and strips the project prefix from it, so the rule
-  has to name `/Guidebook/index.html`. `public/_redirects` is gone and
-  `scripts/pages-postbuild.mjs` now writes the rule from the same prefix Vite
-  builds with, after checking the shell really loads assets from it. Local
-  servers ignore `_redirects`, which is why this only appeared on the real host.
-
 ## [1.0.0] — 2026-10-21
 
 The first release: a complete local-first authoring environment, published as a
@@ -81,6 +54,29 @@ static site with no backend to run and no account to create.
   `/Guidebook/` base path and the `404.html` deep-link fallback, and
   `.forgejo/workflows/ci.yml` runs typecheck, tests, build and an audit of the
   shipped dependencies on every push.
+- **Automated deploys with a matching check.**
+  [`.forgejo/workflows/deploy-pages.yml`](.forgejo/workflows/deploy-pages.yml)
+  builds every push to `main`, publishes it to the `pages` branch, then fetches
+  that branch back and compares its git tree with `dist`; the run fails unless the
+  published files are exactly the build. `scripts/publish-pages.mjs` performs the
+  publish and the check, and `scripts/deploy-pages.sh` calls it too, so the local
+  and automated deploys share one implementation instead of drifting apart. The
+  Pages build writes `deploy.txt` naming its source commit, so the live site can
+  be traced to a commit from the outside, and the publisher refuses a build whose
+  marker names a different commit — a stale `dist` cannot be deployed.
+- **CI no longer runs on `pages`.** That branch holds build output with no
+  `package.json`, so every deploy used to produce a failed CI run that was not a
+  failure; the deploy workflow verifies that branch instead.
+
+### Fixed
+
+- **Deep links 404 on the live site.** Codeberg Pages rejected the unprefixed
+  `/* /index.html 200` rewrite with "invalid redirect": git-pages resolves the
+  target as an absolute URL and strips the project prefix from it, so the rule has
+  to name `/Guidebook/index.html`. The static `public/_redirects` is gone and
+  `scripts/pages-postbuild.mjs` writes the rule from the same prefix Vite builds
+  with, after checking the shell really loads assets from it. Local servers ignore
+  `_redirects`, so this could only appear on the real host.
 
 ### Changed
 
