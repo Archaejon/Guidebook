@@ -22,7 +22,7 @@
  * remote the same way.
  */
 import { execFileSync } from 'node:child_process';
-import { cpSync, existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -109,6 +109,20 @@ function main() {
   try {
     const source = git(['rev-parse', 'HEAD']);
     const existingHead = remoteHead();
+
+    // The build records its own source commit. Publishing a `dist` that was
+    // built from a different commit — or without the marker at all — is exactly
+    // the stale deploy this script exists to prevent, so refuse it here rather
+    // than push it and verify it happily against itself.
+    const markerPath = join(dist, 'deploy.txt');
+    const marker = existsSync(markerPath) ? readFileSync(markerPath, 'utf8') : '';
+    const builtFrom = /^source-commit=(\S+)$/m.exec(marker)?.[1] ?? '';
+    if (builtFrom !== source) {
+      throw new Error(
+        `${dist}/deploy.txt says ${builtFrom ? builtFrom.slice(0, 7) : 'nothing'}, ` +
+          `but HEAD is ${source.slice(0, 7)} — rebuild with "npm run build:pages"`,
+      );
+    }
 
     if (verifyOnly && !existingHead) throw new Error(`the remote has no "${branch}" branch to verify`);
 

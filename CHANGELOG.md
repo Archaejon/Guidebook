@@ -23,8 +23,9 @@ when the stored shape changes, together with a migration.
   publish and the check, and `scripts/deploy-pages.sh` now calls it too, so the
   local and automated deploys share one implementation instead of drifting apart.
   The Pages build writes `deploy.txt` naming its source commit, so the live site
-  can be traced to a commit from the outside. Both paths need the one-time Pages
-  webhook and repository Actions to be enabled.
+  can be traced to a commit from the outside, and the publisher refuses a build
+  whose marker names a different commit — a stale `dist` cannot be deployed.
+  Both paths need the one-time Pages webhook and repository Actions to be enabled.
 - **CI no longer runs on `pages`.** That branch holds build output with no
   `package.json`, so every deploy used to produce a failed CI run that was not a
   failure; the deploy workflow verifies that branch instead.
