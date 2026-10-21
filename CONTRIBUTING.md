@@ -58,8 +58,22 @@ The suite lives in `src/lib/__tests__` and covers the pure logic only — select
 
 ## Submitting changes
 
-1. Fork the repository on [Codeberg](https://codeberg.org/Archaejon/Guidebook) and clone your fork.
+1. Fork the repository on [Codeberg](https://codeberg.org/Archaejon/Guidebook) with the **Fork** button, then clone your fork and keep the original as `upstream`:
+
+   ```bash
+   git clone git@codeberg.org:<your-username>/Guidebook.git
+   cd Guidebook
+   git remote add upstream ssh://git@codeberg.org/Archaejon/Guidebook.git
+   ```
+
 2. Branch from `main`, with a name that says what it does: `fix/dangling-relationship`, `feature/export-odt`.
+
+   ```bash
+   git switch -c fix/dangling-relationship
+   ```
+
+   If `main` moves while you work, rebase onto it instead of merging it in: `git fetch upstream && git rebase upstream/main`.
+
 3. Commit in logical steps. Write the subject in the imperative mood and explain *why* in the body — the diff already shows what changed.
 4. Push to your fork and open a pull request against `main`. Forgejo calls it a "pull request" in the web UI; it is the same thing as a merge request.
 5. Keep one concern per pull request. Drive-by reformatting makes a real fix impossible to review.
