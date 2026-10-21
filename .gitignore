@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Local toolchain copy (Node/PortableGit bundled with the desktop app)
+.tools/
+
+# Screenshots captured during local review — large binaries, not part of the app
+screenshots/
+
+# Environment files. This app needs none; never commit real ones.
+.env
+.env.*
+!.env.example
+
+# Logs, caches, coverage
+*.log
+npm-debug.log*
+coverage/
+.vite/
+
+# Editor and OS junk
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.local
