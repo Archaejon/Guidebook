@@ -139,4 +139,11 @@ Issues and pull requests are welcome on [Codeberg](https://codeberg.org/Archaejo
 
 ## Licence
 
-MIT — see [LICENSE](LICENSE). The sample content is illustrative placeholder text and carries the same licence as the code.
+Two licences, split by what a file is:
+
+- **Code — MIT.** Source, configuration, scripts and workflows: [LICENSE](LICENSE).
+- **Written content — CC BY-SA 4.0.** The illustrative sample text defined in `src/seed.ts` and the documentation: [LICENSE-CONTENT](LICENSE-CONTENT).
+
+The split is deliberate. The software is meant to be forked, modified and hosted with no strings attached, so MIT. The sample guidebook text is meant to be read and reused as a model — a seed for someone else's guidebook — which is exactly the case share-alike exists for: attribution, and any adaptation stays under the same terms.
+
+Neither licence reaches what you write in the app. Your manuscript, notes and sources live in your browser and remain yours, as do the Markdown, HTML and JSON exports you make from them.

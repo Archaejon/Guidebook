@@ -1,3 +1,11 @@
+/*
+ * Licensing note: the code in this file is MIT (see LICENSE). The prose it
+ * defines — domain, section and method text, the sample reading note, the
+ * placeholder quotation, the claims, the experiment notes and the sample
+ * manuscript passage — is licensed CC BY-SA 4.0 (see LICENSE-CONTENT). It is
+ * deliberately placeholder writing: do not replace it with real quotations,
+ * citations or efficacy claims.
+ */
 import type { Domain, Project, Section, Relationship } from './types';
 import {
   blankClaim,

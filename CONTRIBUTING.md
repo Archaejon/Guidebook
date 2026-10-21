@@ -2,7 +2,12 @@
 
 Thanks for looking. This is a small, single-author project that happens to be public, so the most useful contributions are focused fixes and well-argued improvements rather than large refactors.
 
-By contributing you agree that your work is licensed under the terms in [LICENSE](LICENSE) (MIT). There is no CLA to sign, and no copyright assignment: your contribution stays yours, and everyone gets it under the same permissive terms as the rest of the project.
+By contributing you agree that your work is licensed the way the file you are changing is already licensed:
+
+- **Code, configuration, scripts and workflows** — MIT, the terms in [LICENSE](LICENSE).
+- **Written content** — the sample guidebook text in `src/seed.ts` and the documentation — CC BY-SA 4.0, the terms in [LICENSE-CONTENT](LICENSE-CONTENT).
+
+There is no CLA to sign and no copyright assignment: your contribution stays yours, and everyone gets it under the same terms as the surrounding work. If you would rather not license prose under share-alike, contribute code instead.
 
 ## The things this project will not do
 
