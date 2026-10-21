@@ -1,0 +1,4 @@
+# Codeberg Pages rewrite for single-page routing.
+# Serves the app shell without changing the URL, so a refresh on /studio or
+# /read loads the app rather than a 404. Status 200 = rewrite, not a redirect.
+/* /index.html 200

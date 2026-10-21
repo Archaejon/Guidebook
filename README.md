@@ -44,15 +44,24 @@ npm run preview      # serve the built output at http://127.0.0.1:5174
 
 ## Deployment
 
-Upload the contents of `dist/` to any static host — GitHub Pages, Codeberg Pages, Netlify, Cloudflare Pages, or a plain web server.
+The app is a static site: upload the contents of `dist/` to any host — Codeberg Pages, GitHub Pages, Netlify, Cloudflare Pages, or a plain web server. There is no server component, and no user data leaves the browser that loaded the page.
 
 Two things to get right:
 
-1. **Single-page routing.** Routes are handled by `BrowserRouter`, so the host must serve `index.html` for unknown paths (SPA fallback / "rewrite all to index.html"). Without it, a refresh on `/read` or `/studio` returns 404.
-2. **Path.** `vite.config.ts` uses the default base of `/`, so deploy at a domain root. To serve from a subpath, set `base` there and add a matching `basename` to `BrowserRouter` in `src/main.tsx`.
+1. **Single-page routing.** Routes are handled by `BrowserRouter`, so the host must serve `index.html` for unknown paths (SPA fallback). `public/_redirects` carries the Codeberg Pages rewrite `/* /index.html 200`; other hosts need their own equivalent.
+2. **Path.** `vite.config.ts` uses a base of `/` so a root deployment needs no changes. `BrowserRouter` reads `import.meta.env.BASE_URL`, so an asset base prefix automatically becomes the router basename.
 
-Deployment is static hosting only: there is no server component, and no user data leaves the browser that loaded the page.
+### Codeberg Pages
 
+This repository is published as a project site at **https://archaejon.codeberg.page/Guidebook/**, from the `pages` branch.
+
+```bash
+bash scripts/deploy-pages.sh   # build:pages, then commit and push the pages branch
+```
+
+`npm run build:pages` is the one non-obvious part: it builds with `--mode pages`, which sets `base` to `/Guidebook/` in `vite.config.ts`, and then copies `index.html` to `404.html`. That copy is a fallback for deep links, because whether Codeberg Pages applies a `_redirects` rewrite inside a project-site prefix is not documented; the shell costs 900 bytes and makes `/Guidebook/studio` work either way.
+
+Codeberg Pages only publishes a branch once a **Forgejo webhook** points at the site URL, so a first-time deploy needs this in the repository settings: **Settings → Webhooks → Add webhook → Forgejo**, target `https://archaejon.codeberg.page/Guidebook/`, branch filter `pages`.
 ## Storage and privacy
 
 - The whole project is a single JSON document persisted to **IndexedDB** (`guidebook-future`) with a **localStorage** fallback (`src/lib/storage.ts`).
