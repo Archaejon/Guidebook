@@ -22,7 +22,12 @@ when the stored shape changes, together with a migration.
   published files are exactly the build. `scripts/publish-pages.mjs` performs the
   publish and the check, and `scripts/deploy-pages.sh` now calls it too, so the
   local and automated deploys share one implementation instead of drifting apart.
-  Both need the one-time Pages webhook and repository Actions to be enabled.
+  The Pages build writes `deploy.txt` naming its source commit, so the live site
+  can be traced to a commit from the outside. Both paths need the one-time Pages
+  webhook and repository Actions to be enabled.
+- **CI no longer runs on `pages`.** That branch holds build output with no
+  `package.json`, so every deploy used to produce a failed CI run that was not a
+  failure; the deploy workflow verifies that branch instead.
 
 ## [1.0.0] — 2026-10-21
 

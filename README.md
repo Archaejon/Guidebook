@@ -43,7 +43,7 @@ npm run build        # tsc --noEmit, then vite build -> dist/
 npm run preview      # serve the built output at http://127.0.0.1:5174
 ```
 
-`dist/` is a static site (one HTML file, JS and CSS assets, a data-URI favicon).
+`dist/` is a static site (one HTML file, JS and CSS assets, a data-URI favicon). The Pages build also writes `404.html` for deep links and a `deploy.txt` recording the source commit it was built from.
 
 ## Deployment
 
@@ -67,6 +67,8 @@ bash scripts/deploy-pages.sh   # build:pages, then publish and verify the pages 
 ```
 
 Both paths call [scripts/publish-pages.mjs](scripts/publish-pages.mjs), which needs no credentials of its own: locally it uses your SSH remote, and in Actions it uses the token that `actions/checkout` already persisted for the job. `node scripts/publish-pages.mjs --dist dist --verify-only` checks a published branch against a local build without pushing anything.
+
+Because the build carries `deploy.txt`, the deployment is traceable from the outside: `curl https://archaejon.codeberg.page/Guidebook/deploy.txt` names the commit being served, and comparing it with `git rev-parse main` answers "is the live site this commit?" without trusting a push.
 
 `npm run build:pages` is the one non-obvious part: it builds with `--mode pages`, which sets `base` to `/Guidebook/` in `vite.config.ts`, and then copies `index.html` to `404.html`. That copy is a fallback for deep links, because whether Codeberg Pages applies a `_redirects` rewrite inside a project-site prefix is not documented; the shell costs 900 bytes and makes `/Guidebook/studio` work either way.
 

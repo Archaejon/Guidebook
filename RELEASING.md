@@ -85,6 +85,10 @@ pushing: `node scripts/publish-pages.mjs --dist dist --verify-only`.
 
 Then check the live site rather than trusting the run:
 
+- `https://archaejon.codeberg.page/Guidebook/deploy.txt` names the commit being
+  served. Compare it with `git rev-parse main`: that is the only check that
+  proves the live site is the release, rather than a successful push to a branch
+  nothing is serving.
 - `https://archaejon.codeberg.page/Guidebook/` answers 200 and renders the home
   page — not a blank page, and not Codeberg's 404.
 - A deep link such as `/Guidebook/studio` boots the app (either via `_redirects`
