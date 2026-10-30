@@ -1,0 +1,618 @@
+{
+  "format": "guidebook-edition",
+  "formatVersion": 1,
+  "generatedAt": "2026-10-30T11:20:01.949Z",
+  "source": {
+    "title": "Guidebook for the Future — Reader Edition",
+    "authorName": "Author",
+    "commit": "1bcf2ba19c1cd1075610b9a5da578b4481d37a1b"
+  },
+  "edition": {
+    "domains": [
+      {
+        "id": "dom_physical",
+        "roman": "I",
+        "title": "Physical Health",
+        "subtitle": "The body as the foundation of an active, capable and flourishing life.",
+        "accent": "physical",
+        "intro": "Physical health is not an end in itself, but it conditions almost everything else: attention, mood, confidence, the capacity to care for others, and the ability to keep learning. This domain treats the body as a practice ground for discipline, pleasure and resilience.",
+        "purpose": "To establish the minimum conditions of physical capability and recovery that make a demanding, generous life possible — without turning health into an anxious project.",
+        "outcomes": [
+          "A durable base of strength, mobility and aerobic capacity.",
+          "Sleep and recovery treated as non-negotiable infrastructure.",
+          "A way of eating that is enjoyable, socially liveable and evidence-aware.",
+          "Practical competence in movement, balance and physical play."
+        ],
+        "principles": [
+          "Train the capacities life actually demands, not just the ones measured in a gym.",
+          "Recovery is part of the work, not a reward for it.",
+          "Consistency of moderate effort usually outlasts heroic intensity.",
+          "The body is a relationship to be maintained, not a machine to be optimised."
+        ],
+        "connections": [
+          {
+            "domainId": "dom_emotional",
+            "note": "Sleep, movement and nutrition strongly shape emotional regulation and attention."
+          },
+          {
+            "domainId": "dom_social",
+            "note": "Shared physical activity is one of the most reliable forms of social glue."
+          }
+        ],
+        "questions": [
+          "What is the minimum effective dose of training for a capable, long life?",
+          "How should the guidebook handle contested nutrition evidence without becoming dogmatic?",
+          "Where does the pursuit of health tip into vanity or avoidance of mortality?"
+        ],
+        "createdAt": "2026-09-01T09:00:00.000Z",
+        "updatedAt": "2026-10-10T16:20:00.000Z",
+        "illustrative": true
+      },
+      {
+        "id": "dom_emotional",
+        "roman": "II",
+        "title": "Emotional & Intellectual Health",
+        "subtitle": "Emotional stability, self-awareness, curiosity and creative expression.",
+        "accent": "emotional",
+        "intro": "This domain concerns the inner life: the capacity to feel without being overwhelmed, to think clearly, to keep asking questions, and to make something. It treats emotion and intellect as intertwined rather than as separate departments.",
+        "purpose": "To develop a mind that can attend, reflect, endure difficulty and create — grounded in the recognition that emotional life is not an obstacle to reason but part of its material.",
+        "outcomes": [
+          "Reliable ways to regulate emotion and return to the present.",
+          "A practice of introspection that does not collapse into rumination.",
+          "Sustained attention and a living relationship with learning.",
+          "Creative work and play as regular parts of life."
+        ],
+        "principles": [
+          "Naming an experience precisely changes what can be done with it.",
+          "Attention is the raw material of both thought and love.",
+          "Discomfort can be a teacher, but only when chosen and bounded.",
+          "The goal is integration, not the elimination of difficult feeling."
+        ],
+        "connections": [
+          {
+            "domainId": "dom_physical",
+            "note": "Physiological state sets the range of emotional responses available."
+          },
+          {
+            "domainId": "dom_spiritual",
+            "note": "Contemplative traditions offer refined technologies of attention and self-examination."
+          }
+        ],
+        "questions": [
+          "Which contemplative practices survive translation into secular, evidence-aware language?",
+          "What distinguishes productive discomfort from harm?",
+          "How do we evaluate creative practices whose value is not instrumental?"
+        ],
+        "createdAt": "2026-09-01T09:05:00.000Z",
+        "updatedAt": "2026-10-11T10:15:00.000Z",
+        "illustrative": true
+      },
+      {
+        "id": "dom_social",
+        "roman": "IV",
+        "title": "Social Health",
+        "subtitle": "Relationships, institutions, shared places and networks that let people flourish together.",
+        "accent": "social",
+        "intro": "Flourishing is not a solitary achievement. This domain examines friendship, family, community structure and the built environment — the relationships and institutions that either hold people up or quietly wear them down.",
+        "purpose": "To build the relational and institutional conditions for trust, belonging and mutual aid, from close relationships to local networks.",
+        "outcomes": [
+          "Stronger close relationships and clearer expectations within them.",
+          "Communities with shared places, shared resources and ways of making decisions.",
+          "Practical experience of mutual aid and intergenerational transmission.",
+          "Settlements designed for contact rather than isolation."
+        ],
+        "principles": [
+          "Relationships are maintained by repeated, ordinary contact.",
+          "Shared activity often builds trust more reliably than shared opinion.",
+          "Institutions should be small enough to be legible and strong enough to endure.",
+          "Care for children and elders is a collective structure, not only a private burden."
+        ],
+        "connections": [
+          {
+            "domainId": "dom_emotional",
+            "note": "Emotional capacity is developed and tested in relationships."
+          },
+          {
+            "domainId": "dom_world",
+            "note": "Local social structures either support or undermine ecological stewardship."
+          }
+        ],
+        "questions": [
+          "Which modern relationship difficulties are structural rather than personal?",
+          "How should contested family and demographic questions be treated without evasion or prescription?",
+          "What makes a third place actually work rather than merely exist?"
+        ],
+        "createdAt": "2026-09-01T09:15:00.000Z",
+        "updatedAt": "2026-10-13T14:05:00.000Z",
+        "illustrative": true
+      }
+    ],
+    "sections": [
+      {
+        "id": "sec_strength",
+        "domainId": "dom_physical",
+        "title": "Strength",
+        "description": "Progressive resistance training for a body that can carry, climb, lift and recover. Strength is treated as a general capability supporting independence and injury resilience.",
+        "outcomes": [
+          "Progressive strength across major movement patterns.",
+          "Confidence in handling everyday physical demands."
+        ],
+        "frameworks": [
+          "Progressive overload",
+          "Functional movement patterns"
+        ],
+        "draft": "",
+        "questions": [
+          "What is the minimum effective dose for long-term independence?"
+        ],
+        "relatedSectionIds": [],
+        "createdAt": "2026-09-02T09:00:00.000Z",
+        "updatedAt": "2026-10-08T12:00:00.000Z",
+        "illustrative": true
+      },
+      {
+        "id": "sec_introspection",
+        "domainId": "dom_emotional",
+        "title": "Introspection & self-knowledge",
+        "description": "Structured self-examination: motives, patterns, values and blind spots. Aims at truthful self-description rather than self-absorption.",
+        "outcomes": [
+          "A regular reflective practice.",
+          "Better language for one’s own patterns."
+        ],
+        "frameworks": [
+          "Mussar self-examination",
+          "Stoic evening review",
+          "Narrative identity"
+        ],
+        "draft": "",
+        "questions": [],
+        "relatedSectionIds": [],
+        "createdAt": "2026-09-02T09:00:00.000Z",
+        "updatedAt": "2026-10-08T12:00:00.000Z",
+        "illustrative": true
+      },
+      {
+        "id": "sec_gardens",
+        "domainId": "dom_social",
+        "title": "Community gardens & local food",
+        "description": "Community gardens, forest gardens and local food production as sites of physical work, social contact and ecological literacy.",
+        "outcomes": [
+          "A functioning shared growing space.",
+          "More local food knowledge and skill."
+        ],
+        "frameworks": [
+          "Permaculture",
+          "Agroecology",
+          "Allotment traditions"
+        ],
+        "draft": "",
+        "questions": [],
+        "relatedSectionIds": [],
+        "createdAt": "2026-09-02T09:00:00.000Z",
+        "updatedAt": "2026-10-08T12:00:00.000Z",
+        "illustrative": true
+      }
+    ],
+    "methods": [
+      {
+        "id": "m_strength",
+        "title": "Strength Training",
+        "summary": "Progressive resistance training two to three times a week to build and retain the strength needed for an independent, capable life.",
+        "primaryDomainId": "dom_physical",
+        "primarySectionId": "sec_strength",
+        "secondaryDomainIds": [
+          "dom_emotional"
+        ],
+        "relatedSectionIds": [
+          "sec_sleep",
+          "sec_nutrition",
+          "sec_balance"
+        ],
+        "tags": [
+          "movement",
+          "progressive overload",
+          "capability"
+        ],
+        "status": "Published",
+        "createdAt": "2026-09-12T10:00:00.000Z",
+        "updatedAt": "2026-10-16T17:30:00.000Z",
+        "purpose": {
+          "problem": "Most people lose strength gradually and only notice when an ordinary task — carrying shopping, rising from a low chair, climbing stairs — becomes difficult.",
+          "importance": "Strength supports independence, bone density, metabolic health and the confidence to keep doing things. It is among the most trainable physical qualities at any age.",
+          "outcomes": "A gradual increase in load or repetitions across a small number of compound movements; better ease in daily physical tasks; a routine that survives busy weeks.",
+          "suitableFor": "Almost anyone able to move against resistance, including older adults and beginners, provided the starting load is genuinely easy.",
+          "unsuitableWhen": "Recent surgery, uncontrolled cardiovascular conditions, acute injury, or any situation where a clinician has advised against loaded exercise. This sample is not medical advice."
+        },
+        "instructions": {
+          "preparation": "Choose two or three compound movements (for example a squat, a press and a row), a load you can lift with good form, and a place to record what you did. Warm up with easy movement and a lighter set.",
+          "steps": [
+            "Warm up for five minutes with easy movement and one or two light rehearsal sets.",
+            "Perform three working sets of a lower-body movement, resting long enough to feel recovered.",
+            "Perform three working sets of an upper-body push and pull.",
+            "Leave one or two repetitions in reserve on most sets; stop if form deteriorates.",
+            "Record loads and repetitions. Increase one variable only when the previous session was comfortable.",
+            "Finish with a short walk or mobility reset, and eat something containing protein afterwards."
+          ],
+          "frequency": "Two sessions per week is a reasonable minimum; three is plenty for most people. Consistency over months matters more than session length.",
+          "beginner": "Start with bodyweight or very light loads, two sets per movement, and focus on range and control. Add load only when the movement feels boringly reliable.",
+          "intermediate": "Use a small set of compound lifts with planned progression, adding load or repetitions across sessions and deloading when fatigue accumulates.",
+          "advanced": "Periodise intensity and volume across weeks, address weak links, and use sport-specific assistance work. Advanced programming is beyond this sample.",
+          "adaptations": "A single dumbbell, resistance bands or a loaded backpack can replace a gym. Chair-based and seated variations work for many people with limited mobility.",
+          "mistakes": "Adding weight before technique is stable; training to failure every session; ignoring pain that is sharp or joint-specific; changing programmes every few weeks.",
+          "safety": "Use safeties or a spotter for heavy lifts. Stop for chest pain, dizziness or sharp pain. If you are uncertain about your health, consult a clinician before starting."
+        },
+        "rationale": {
+          "mechanisms": "Progressive overload imposes a demand that muscle, bone and connective tissue adapt to. Strength also improves movement efficiency and confidence, which may increase everyday activity.",
+          "evidence": "Illustrative sample. The general claim that resistance training increases strength is well established, but this record does not yet cite specific reviews. Add verifiable sources before treating any precise effect as supported.",
+          "counterEvidence": "Strength gains do not automatically translate into all health outcomes, and injury risk rises with poor progression. Time, cost and access are real barriers.",
+          "assumptions": "That the reader can safely load the movements, has some control over their schedule, and is not in an acute medical situation.",
+          "uncertainties": "The minimum effective dose for long-term independence, the relative value of different loading schemes, and how strength interacts with sleep and nutrition over decades."
+        },
+        "knowledge": {
+          "science": "To investigate: systematic reviews on resistance training and physical function in older adults; dose–response studies on volume and frequency.",
+          "books": "General strength-training texts and coaching manuals — add specific editions and pages.",
+          "philosophy": "Ask what kind of capability a good life requires, and whether strength is a means, an obligation, or part of human flourishing.",
+          "history": "Physical culture movements, military training, and the modern gym as a social institution.",
+          "observations": "Personal experience and coaching observations belong here, clearly marked as anecdote rather than evidence."
+        },
+        "evaluation": {
+          "success": "The author can name a few everyday tasks that became easier, and training has continued for at least eight weeks without injury.",
+          "measures": "Loads and repetitions in a training log; a timed sit-to-stand test; grip strength; self-reported ease of daily tasks.",
+          "timeframe": "Eight to twelve weeks for a first review; years for the question of long-term capability.",
+          "costs": "Time, equipment or membership, recovery capacity, and the risk of injury from poor progression.",
+          "confidence": "Moderate for the general strength effect; low for the specific prescription in this sample. Evidence has not yet been reviewed."
+        },
+        "application": {
+          "self": "Two short sessions per week, built around a few compound movements and a written log.",
+          "family": "Train together or share equipment; adapt loads for different ages and abilities; model consistency rather than competition.",
+          "community": "A shared gym corner, a coached beginners’ group, or a weekly strength session in a community hall.",
+          "society": "Accessible public exercise spaces, physical education that teaches lifting, and health systems that treat strength as preventative.",
+          "ecological": "Durable, repairable equipment and shared rather than individually owned kit reduce material use."
+        },
+        "notes": {
+          "questions": [],
+          "disagreements": "",
+          "reflections": "",
+          "improvements": "",
+          "futureExperiments": ""
+        },
+        "scales": {
+          "self": {
+            "direct": "Increased strength and confidence in daily movement.",
+            "indirect": "Better sleep, mood and willingness to be physically active.",
+            "beneficiaries": "The individual, and anyone who depends on them.",
+            "costs": "Time, recovery, equipment and possible injury.",
+            "dependencies": "Sleep, nutrition, safe technique and a place to train.",
+            "unintended": "Risk of overtraining or disordered body image if framed as appearance work."
+          },
+          "family": {
+            "direct": "Shared routines and a household that can move furniture, carry children and care for elders.",
+            "indirect": "Children learn that physical practice is ordinary.",
+            "beneficiaries": "Partners, children, older relatives.",
+            "costs": "Time away from family, or childcare coordination.",
+            "dependencies": "Space, equipment, flexible schedules.",
+            "unintended": "Competition or body comparison within the household."
+          },
+          "community": {
+            "direct": "Shared training spaces and beginner groups.",
+            "indirect": "Social contact across ages and backgrounds.",
+            "beneficiaries": "Isolated residents, older adults, young people.",
+            "costs": "Space, insurance, coaching time.",
+            "dependencies": "A venue and a reliable organiser.",
+            "unintended": "Groups can become exclusive or status-driven."
+          },
+          "region": {
+            "direct": "Public fitness infrastructure and preventive health programmes.",
+            "indirect": "Reduced fall-related costs and improved population capability.",
+            "beneficiaries": "Health systems and residents.",
+            "costs": "Public investment and maintenance.",
+            "dependencies": "Policy, planning, transport access.",
+            "unintended": "Facilities may concentrate in wealthier areas."
+          },
+          "global": {
+            "direct": "Little direct effect from one person’s training.",
+            "indirect": "Global norms around physical activity and preventive health.",
+            "beneficiaries": "Populations with access to programmes.",
+            "costs": "Competing global health priorities.",
+            "dependencies": "International health guidance and evidence sharing.",
+            "unintended": "Western gym culture can displace local movement traditions."
+          },
+          "ecological": {
+            "direct": "Minimal, though equipment has a material footprint.",
+            "indirect": "Active travel and outdoor training can reduce car use; shared equipment reduces consumption.",
+            "beneficiaries": "Local air quality and material systems.",
+            "costs": "Manufacturing and disposal of equipment.",
+            "dependencies": "Durable design and repair networks.",
+            "unintended": "Outdoor training can damage sensitive habitats if poorly sited."
+          }
+        },
+        "hiddenSections": [],
+        "illustrative": true
+      },
+      {
+        "id": "m_journal",
+        "title": "Reflective Journalling",
+        "summary": "A short, structured written practice for examining the day, naming patterns and deciding what to do differently.",
+        "primaryDomainId": "dom_emotional",
+        "primarySectionId": "sec_introspection",
+        "secondaryDomainIds": [
+          "dom_spiritual"
+        ],
+        "relatedSectionIds": [
+          "sec_grounding",
+          "sec_prayer",
+          "sec_gratitude"
+        ],
+        "tags": [
+          "reflection",
+          "self-knowledge",
+          "writing"
+        ],
+        "status": "Published",
+        "createdAt": "2026-09-18T08:30:00.000Z",
+        "updatedAt": "2026-10-17T09:10:00.000Z",
+        "purpose": {
+          "problem": "Experience passes quickly. Without a structure for reflection, the same difficulties recur without being noticed, and lessons remain vague.",
+          "importance": "Reflection turns experience into something that can inform the next attempt. It also creates a record that can later be compared with memory, which is unreliable.",
+          "outcomes": "A small number of honest observations about the day; a named pattern; one concrete intention for tomorrow.",
+          "suitableFor": "People who can set aside ten to fifteen minutes and are willing to write plainly, including when little seems to have happened.",
+          "unsuitableWhen": "Acute crisis, severe depression or trauma that is being activated by unguided self-examination. Reflection is not a substitute for therapy."
+        },
+        "instructions": {
+          "preparation": "A notebook or plain document, a regular time, and a short set of prompts. Keep the format boring enough to repeat.",
+          "steps": [
+            "Write the date and one sentence describing the day’s overall texture.",
+            "Answer three prompts: What happened? What did I notice about myself? What will I try next?",
+            "Name one thing that went well and one thing that did not, without immediately explaining either away.",
+            "Write one concrete intention for the following day.",
+            "Once a week, reread the entries and look for a recurring pattern rather than a single dramatic event."
+          ],
+          "frequency": "Ten minutes at the end of the day, five days a week; a twenty-minute weekly review. Missing days is expected.",
+          "beginner": "One page, three sentences, no analysis. The aim is to establish the habit of truthful description.",
+          "intermediate": "Use a stable set of prompts and add a weekly review that compares entries and identifies one pattern.",
+          "advanced": "Work with longer-form examination, including motives, recurring fears and the gap between stated values and actual behaviour; consider a trusted reader or therapist for difficult material.",
+          "adaptations": "Voice notes transcribed later; a shared journal with a partner; a structured template for project retrospectives; a single index card when time is short.",
+          "mistakes": "Turning the journal into a performance; only recording failures; writing endlessly without deciding anything; treating insight as a substitute for action.",
+          "safety": "If reflection consistently leaves you worse, stop and seek support. Do not use the practice to relive trauma without guidance."
+        },
+        "rationale": {
+          "mechanisms": "Writing slows cognition, externalises memory and creates distance from immediate emotion. Structured prompts may support reappraisal and planning.",
+          "evidence": "Illustrative sample. Expressive writing has been studied extensively, but findings are mixed and highly dependent on context and format. Specific claims need sources and critical review.",
+          "counterEvidence": "Rumination can be worsened by repeated negative self-focus. Journaling does not replace treatment, and some studies find little benefit for wellbeing.",
+          "assumptions": "That the writer can describe experience with reasonable accuracy and has enough stability to reflect without destabilisation.",
+          "uncertainties": "Which prompts help, for whom, and whether benefits come from writing, routine, or simply taking time to stop."
+        },
+        "knowledge": {
+          "science": "To investigate: expressive-writing research, rumination and self-distancing literature, and studies of implementation intentions.",
+          "books": "Stoic and Mussar texts on daily self-examination; modern writing guides that treat reflection as craft.",
+          "philosophy": "The examined life; the difference between introspection and rumination; the ethics of self-description.",
+          "history": "Diaries, spiritual autobiographies, and the long tradition of keeping a commonplace book.",
+          "observations": "Try it for a month and record adherence, quality of decisions and emotional effects."
+        },
+        "evaluation": {
+          "success": "A month of entries exists, at least one pattern has been named, and one intention has actually changed behaviour.",
+          "measures": "Number of entries; recurring themes; whether intentions were attempted; a simple weekly mood rating if useful.",
+          "timeframe": "Four weeks for a first review; three months to judge whether the practice is sustainable.",
+          "costs": "Fifteen minutes a day, emotional labour, and the risk of rumination.",
+          "confidence": "Low to moderate. The mechanism is plausible; the specific protocol is untested here."
+        },
+        "application": {
+          "self": "A short end-of-day entry and a weekly rereading.",
+          "family": "A weekly conversation using the same prompts, or a shared notebook for household decisions.",
+          "community": "A facilitated reflective circle, or a project journal that records decisions and what was learned.",
+          "society": "Public institutions that build reflection into professional practice, rather than only after failure.",
+          "ecological": "Reflection on consumption and land use can make habits visible, but only if it leads to changed practice."
+        },
+        "notes": {
+          "questions": [],
+          "disagreements": "",
+          "reflections": "",
+          "improvements": "",
+          "futureExperiments": ""
+        },
+        "scales": {
+          "self": {
+            "direct": "Better self-description and one changed intention.",
+            "indirect": "Improved emotional granularity and memory for decisions.",
+            "beneficiaries": "The writer.",
+            "costs": "Time and emotional labour.",
+            "dependencies": "Literacy, privacy and a stable routine.",
+            "unintended": "Rumination, perfectionism about the practice, or false confidence in self-narration."
+          },
+          "family": {
+            "direct": "Shared reflection can surface unspoken expectations.",
+            "indirect": "Modeling reflection for children.",
+            "beneficiaries": "Partners and children.",
+            "costs": "Vulnerability and possible conflict.",
+            "dependencies": "Safety and willingness of all participants.",
+            "unintended": "One person’s reflection can become surveillance of another."
+          },
+          "community": {
+            "direct": "Group retrospectives and shared learning records.",
+            "indirect": "Institutional memory.",
+            "beneficiaries": "Groups making repeated decisions.",
+            "costs": "Facilitation time.",
+            "dependencies": "Trust and honest reporting.",
+            "unintended": "Reflection can become a ritual that avoids action."
+          },
+          "region": {
+            "direct": "Limited.",
+            "indirect": "Public learning after failures if institutions support it.",
+            "beneficiaries": "Public services.",
+            "costs": "Bureaucratic overhead.",
+            "dependencies": "Cultures of accountability.",
+            "unintended": "Documentation can become defensiveness."
+          },
+          "global": {
+            "direct": "Negligible.",
+            "indirect": "Cross-community learning if practices are shared openly.",
+            "beneficiaries": "Distributed practitioners.",
+            "costs": "Attention and translation.",
+            "dependencies": "Open publication and context.",
+            "unintended": "Decontextualised methods spreading without their safeguards."
+          },
+          "ecological": {
+            "direct": "None directly.",
+            "indirect": "Reflection can change consumption if it leads to decisions.",
+            "beneficiaries": "Indirect.",
+            "costs": "Paper or device use.",
+            "dependencies": "Follow-through.",
+            "unintended": "Moralising inwardness without material change."
+          }
+        },
+        "hiddenSections": [],
+        "illustrative": true
+      },
+      {
+        "id": "m_garden",
+        "title": "Community Gardening",
+        "summary": "A shared growing space used for food, physical work, social contact and ecological learning. This sample links Social, World, Physical and Emotional health.",
+        "primaryDomainId": "dom_social",
+        "primarySectionId": "sec_gardens",
+        "secondaryDomainIds": [
+          "dom_world",
+          "dom_physical",
+          "dom_emotional"
+        ],
+        "relatedSectionIds": [
+          "sec_shared_resources",
+          "sec_third_places",
+          "sec_restoration",
+          "sec_food_systems"
+        ],
+        "tags": [
+          "food",
+          "community",
+          "ecology",
+          "shared place"
+        ],
+        "status": "Published",
+        "createdAt": "2026-09-20T14:00:00.000Z",
+        "updatedAt": "2026-10-18T11:45:00.000Z",
+        "purpose": {
+          "problem": "Many neighbourhoods have unused land, thin social ties and little everyday contact with how food grows. People also lack low-cost ways to be physically active and to learn ecological skills together.",
+          "importance": "A garden is a concrete shared object: it creates repeated contact, visible mutual dependence and a reason to be outside. It can also improve local habitat and food knowledge.",
+          "outcomes": "A functioning shared growing space; a group that can organise work and share harvests; more local ecological literacy; regular light-to-moderate physical activity.",
+          "suitableFor": "Neighbourhood groups, schools, faith communities, housing associations and workplaces with access to land and water.",
+          "unsuitableWhen": "Land is contaminated or insecure; water access is unavailable; the group cannot sustain maintenance; or the project would displace existing users or community uses."
+        },
+        "instructions": {
+          "preparation": "Secure permission and water. Test soil for contaminants before growing food. Agree a simple governance model, a budget, a maintenance rota and a plan for winter. Start with a small area that can succeed rather than the whole site.",
+          "steps": [
+            "Map the site: sun, water, access, soil, existing plants and people who use the space.",
+            "Agree purpose and rules with the people who will actually do the work; write down who decides what.",
+            "Start with a small bed, a shared tool store and a water plan.",
+            "Hold a regular work session at the same time each week; make it social and include a task for beginners.",
+            "Grow a few reliable crops first; add ecological features such as habitat piles or a forest-garden corner over time.",
+            "Share harvests and decisions openly; review the season together before planning the next."
+          ],
+          "frequency": "One shared session per week during the growing season, with lighter maintenance between. Plan a realistic winter rhythm.",
+          "beginner": "A few containers or a single raised bed with herbs and salad. Focus on soil, water and showing up.",
+          "intermediate": "A shared plot with a crop plan, a compost system and a rota for watering and maintenance.",
+          "advanced": "A forest-garden or agroecological system with perennial planting, seed saving, community education and links to local food institutions.",
+          "adaptations": "Window boxes, balconies, school yards, church land, allotment plots, guerrilla gardening (with legal care) and shared gardens between neighbours.",
+          "mistakes": "Building too much infrastructure before a group exists; ignoring water; ignoring contaminated soil; planning only for summer; letting one enthusiastic person carry everything.",
+          "safety": "Test soil where food is grown. Use tools with basic training. Manage allergies, sun exposure, water safety and manual-handling risks. Ensure the site is accessible."
+        },
+        "rationale": {
+          "mechanisms": "Gardening combines physical activity, outdoor light, skill learning and repeated social contact around a shared task. Shared place may strengthen attachment and informal mutual aid.",
+          "evidence": "Illustrative sample. There is research on community gardens and wellbeing, but it is heterogeneous and often observational. Add specific studies and assess their limitations before making causal claims.",
+          "counterEvidence": "Benefits are unevenly distributed; gardens can raise property values and displace residents; participation can be burdensome for people with limited time; some well-intended projects fail within a season.",
+          "assumptions": "That land and water are available, the group has enough capacity, and the garden is genuinely open to the surrounding community.",
+          "uncertainties": "How large the effects are, how long they last, and whether gardens build durable social ties or mainly serve already-connected people."
+        },
+        "knowledge": {
+          "science": "To investigate: reviews of community gardening and health; allotment studies; urban ecology and soil contamination guidance.",
+          "books": "Practical growing guides, land-use and commons literature, and local food histories.",
+          "philosophy": "Ideas of stewardship, commoning, work and place; traditions that treat cultivation as a moral practice.",
+          "history": "Allotment movements, victory gardens, urban agriculture and land reform.",
+          "observations": "Keep a seasonal log: who came, what grew, what failed, who was excluded."
+        },
+        "evaluation": {
+          "success": "The garden is still active after a year, a core group shares work, newcomers return, and some food is eaten or shared.",
+          "measures": "Weekly attendance; retention; area cultivated; harvest recorded informally; participant interviews; biodiversity observations.",
+          "timeframe": "One growing season for a first review; three years to judge durability.",
+          "costs": "Land, water, tools, insurance, coordination time and the risk of volunteer burnout.",
+          "confidence": "Low to moderate for social outcomes; higher for the direct food and activity produced. This sample has not been through evidence review."
+        },
+        "application": {
+          "self": "Join an existing garden before starting one; commit to one weekly session.",
+          "family": "A household plot or shared bed; children can take responsibility for a crop.",
+          "community": "A shared site with clear governance, a tool library link and inclusive membership.",
+          "society": "Planning rules that protect community growing land, water access, and support for local food infrastructure.",
+          "ecological": "Habitat features, composting, water capture, perennial crops and reduced food miles — with attention to soil and wildlife."
+        },
+        "notes": {
+          "questions": [],
+          "disagreements": "",
+          "reflections": "",
+          "improvements": "",
+          "futureExperiments": ""
+        },
+        "scales": {
+          "self": {
+            "direct": "Physical activity, outdoor time, skill and food.",
+            "indirect": "Belonging and a reason to leave the house.",
+            "beneficiaries": "The gardener.",
+            "costs": "Time, physical strain and possible disappointment.",
+            "dependencies": "Accessible site, tools, water.",
+            "unintended": "Obligation can become another source of pressure."
+          },
+          "family": {
+            "direct": "Shared activity and food for the household.",
+            "indirect": "Children learn where food comes from.",
+            "beneficiaries": "Households and children.",
+            "costs": "Coordination and childcare.",
+            "dependencies": "A site near home.",
+            "unintended": "Uneven division of labour."
+          },
+          "community": {
+            "direct": "Repeated contact and shared work across neighbours.",
+            "indirect": "Trust, mutual aid and a visible shared place.",
+            "beneficiaries": "Neighbours, isolated residents, local businesses.",
+            "costs": "Land, water, insurance and coordination.",
+            "dependencies": "Tenure, governance, inclusion.",
+            "unintended": "Gentrification pressure and exclusion of poorer residents."
+          },
+          "region": {
+            "direct": "Local food production and green infrastructure.",
+            "indirect": "Cooling, water retention and habitat connectivity.",
+            "beneficiaries": "Residents and local ecology.",
+            "costs": "Planning and land opportunity costs.",
+            "dependencies": "Land policy and water infrastructure.",
+            "unintended": "Green amenities can accelerate displacement."
+          },
+          "global": {
+            "direct": "Small.",
+            "indirect": "A cultural model of local food and commoning.",
+            "beneficiaries": "Communities learning from the model.",
+            "costs": "Attention and resources diverted from larger-scale action.",
+            "dependencies": "Networks of practice.",
+            "unintended": "Local projects can substitute for structural change."
+          },
+          "ecological": {
+            "direct": "Habitat, pollinators, soil care and reduced food miles.",
+            "indirect": "Ecological literacy and care for nearby life.",
+            "beneficiaries": "Insects, birds, soil and humans.",
+            "costs": "Water use, imported soil or peat, and possible disturbance.",
+            "dependencies": "Ecological knowledge and continuity.",
+            "unintended": "Poorly chosen plants or inputs can harm local ecology."
+          }
+        },
+        "hiddenSections": [],
+        "illustrative": true
+      }
+    ],
+    "slugs": {
+      "dom_physical": "physical-health",
+      "dom_emotional": "emotional-intellectual-health",
+      "dom_social": "social-health",
+      "sec_strength": "strength",
+      "sec_introspection": "introspection-self-knowledge",
+      "sec_gardens": "community-gardens-local-food",
+      "m_strength": "strength-training",
+      "m_journal": "reflective-journalling",
+      "m_garden": "community-gardening"
+    }
+  }
+}

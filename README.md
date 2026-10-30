@@ -51,7 +51,7 @@ The app is a static site: upload the contents of `dist/` to any host — Codeber
 
 Two things to get right:
 
-1. **Single-page routing.** Routes are handled by `BrowserRouter`, so the host must serve `index.html` for unknown paths (SPA fallback). `public/_redirects` carries the Codeberg Pages rewrite `/* /index.html 200`; other hosts need their own equivalent.
+1. **Single-page routing.** Routes are handled by `BrowserRouter`, so the host must serve `index.html` for unknown paths (SPA fallback). The Pages build writes a `_redirects` rule for that; other hosts need their own equivalent.
 2. **Path.** `vite.config.ts` uses a base of `/` so a root deployment needs no changes. `BrowserRouter` reads `import.meta.env.BASE_URL`, so an asset base prefix automatically becomes the router basename.
 
 ### Codeberg Pages
@@ -76,18 +76,50 @@ Because the build carries `deploy.txt`, the deployment is traceable from the out
 
 Codeberg Pages only publishes a branch once a **Forgejo webhook** points at the site URL, so a first-time deploy needs this in the repository settings: **Settings → Webhooks → Add webhook → Forgejo**, target `https://archaejon.codeberg.page/Guidebook/`, branch filter `pages`. Until that webhook exists, a deploy pushes to `pages` successfully and the site still answers HTTP 400. Repository **Actions** must also be enabled (Settings → Units → Enable Actions) for the deploy workflow to run at all.
 
+## Publishing the edition
+
+The deployed site's `/read` is not the visitor's workspace. It is **the edition committed to this repository**, at [content/guidebook.json](content/guidebook.json): a projection of a project containing only methods whose status is `Published`, plus the sections and domains they reach. So every visitor sees the same guide, a shared link means the same thing to everyone, and no draft, research note, quotation, claim, experiment or unpublished manuscript chapter is ever bundled into the site. Sections contribute their title, description, outcomes, frameworks and questions but never their `draft` text, and a method's author's notes are emptied, because no reader surface renders either.
+
+| URL | Page |
+|---|---|
+| `/read` | Edition contents |
+| `/read/<domain>` | One domain: purpose, outcomes, principles and its published sections |
+| `/read/<domain>/<section>` | One section and the methods published under it |
+| `/read/method/<method>` | One method, rendered as reading material |
+
+The browser's own reader — reading IndexedDB and showing published manuscript chapters as well — is the **local preview** at `/preview`, linked from Settings. It is a preview, not the published edition.
+
+### Regenerating the edition
+
+Mark what is ready as Published in the app, export **Settings → Full JSON backup**, and run:
+
+```bash
+npm run content:sync -- ~/Downloads/guidebook-backup-2026-10-30.json
+```
+
+That rewrites `content/guidebook.json`. Slugs are keyed by record id and carried over from the existing file, so renaming an already-published method does not move or break its page; a new record gets a slug from its title, and a collision gets `-2`. Commit the file — the next deploy publishes it.
+
+`npm run content:sample` regenerates the file from the illustrative sample project in `src/seed.ts`, which is how the shipped edition is built. The sample methods are marked Published by that generator alone (the workspace seed keeps them as drafts) so the deployed site has a public surface to show; every record keeps its `illustrative` flag, and the edition labels them as sample material.
+
+`npm run content:check` runs before every build and in CI. It fails on an unpublished method in the file, a record without a slug, two records sharing a URL, a method whose domain or section is missing, a slug the router reserves, or a format version this build does not understand — so a broken or leaky edition cannot be deployed even if the file was edited by hand.
+
+The rules themselves live in [src/lib/edition.ts](src/lib/edition.ts) and are used by the app, the scripts and the tests, so the generator cannot drift from the pages that consume it.
+
 ## Storage and privacy
 
 - The whole project is a single JSON document persisted to **IndexedDB** (`guidebook-future`) with a **localStorage** fallback (`src/lib/storage.ts`).
 - Debounced autosave (~650 ms) after any change; `pagehide`/`visibilitychange` flushes pending edits. The sidebar shows saved / saving / error state.
 - Nothing is sent to a server. There is no sync, so a cleared browser profile loses the project — hence JSON export and in-browser backup points in Settings.
-- The reader view (`/read`) and the reader HTML export contain **only** records whose status is `Published`. Drafts never appear in a published surface.
+- The reader surfaces — the public edition (`/read`), the local preview (`/preview`) and the reader HTML export — contain **only** records whose status is `Published`. Drafts never appear in a published surface.
+- The public edition is a file in this repository, not the visitor's browser: what `/read` shows is what the last commit published. See [Publishing the edition](#publishing-the-edition).
 - Deleting a record moves it to **Recently deleted** (Settings) with restore; manuscript deletions keep the whole subtree.
 - `WorkspaceGate` (in `src/App.tsx`) renders a loading state until the stored project has loaded, so deep links never initialise an editor from placeholder data.
 
 ## Layout
 
 ```
+content/
+  guidebook.json      the committed public edition (generated; see Publishing the edition)
 src/
   types.ts            all entities + statuses, scales, relationship types
   seed.ts             illustrative sample project
@@ -98,14 +130,20 @@ src/
     selectors.ts      hierarchy, entity lookup, incoming/outgoing relationships
     search.ts         cross-entity search and filtering
     exports.ts        Markdown/plain text/HTML/JSON generation
+    edition.ts        published-only projection, slug assignment, URL helpers
+    editionData.ts    the bundled committed edition
     pageTitle.ts      browser-tab titles derived from the page heading
     utils.ts          markdown helpers, word count, downloadFile
     __tests__/        Vitest suite + the shared project fixture
   components/         Layout, RouteTitle, ErrorBoundary, ui primitives (Modal, ConfirmDialog,
-                      LinkDialog), Markdown, create dialogs
+                      LinkDialog), Markdown, ReaderMethod, create dialogs
   pages/              Home, Guide, MethodPage, MethodEditor, Studio, Research, SourceDetail,
                       ResearchEditor, NoteEditor, Connections, Experiments, Scales, SearchPage,
-                      Inbox, Settings, Reader
+                      Inbox, Settings, Reader (/preview), Edition (/read)
+scripts/
+  content-sync.mjs    regenerate the edition from a project backup
+  content-sample.mjs  regenerate the shipped sample edition
+  check-content.mjs   build-time validation of the edition file
 ```
 
 ### Data model
@@ -123,6 +161,8 @@ Manuscript passages reference methods with `[[method:<id>|Label]]`, resolved liv
 - **`selectors.test.ts`** — entity lookup and routes for all ten record types, relationship traversal in both directions, dangling relationships after a deletion, secondary domains and related sections, the inline `[[method:…]]` reverse index (including de-duplication when a document is both linked and mentioned), tree ordering and descendants, word counts, completion scoring and project statistics.
 - **`search.test.ts`** — the ranking ladder (exact title > partial title > tag > body), case/whitespace handling, every filter including date ranges, the 150-result cap, excerpt centring, and the invariant that every result points at a resolvable record and its canonical route.
 - **`exports.test.ts`** — Markdown rendering and escaping (raw HTML in a title must not become markup), manuscript heading order and draft exclusion, plain-text stripping, method and library Markdown, bibliography and unverified-claim output, and the Published-only boundary of the reader HTML.
+- **`edition.test.ts`** — the published-only projection (a draft method and its domain stay out), slug stability across a title change, per-domain and global uniqueness, reserved and malformed slugs, the domain/section/method URL shapes, and every rejection in `editionProblems`.
+- **`editionContent.test.ts`** — the committed `content/guidebook.json` is itself publishable, its URLs are distinct and correctly shaped, and a cross-reference to an unpublished method resolves to nothing.
 
 `src/lib/__tests__/pageTitle.test.ts` covers the browser-tab titles: heading-first ordering, whitespace collapsing, and the fallback when a page has no heading yet.
 

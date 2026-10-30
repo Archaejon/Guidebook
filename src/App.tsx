@@ -17,6 +17,12 @@ import { SearchPage } from './pages/SearchPage';
 import { InboxPage } from './pages/Inbox';
 import { SettingsPage } from './pages/Settings';
 import { ReaderPage } from './pages/Reader';
+import {
+  EditionLandingPage,
+  EditionDomainPage,
+  EditionSectionPage,
+  EditionMethodPage,
+} from './pages/Edition';
 import { EmptyState } from './components/ui';
 import { RouteTitle } from './components/RouteTitle';
 import { useStore } from './store';
@@ -62,7 +68,17 @@ export default function App() {
     <WorkspaceGate>
       <RouteTitle />
       <Routes>
-      <Route path="/read" element={<ReaderPage />} />
+      {/**
+       * The public edition renders the committed content file, not this
+       * browser's workspace, so a visitor sees the same guide and the same
+       * URLs. `method` is a static segment and outranks `:domainSlug` in the
+       * router's ranking. The workspace reader moved to /preview.
+       */}
+      <Route path="/read" element={<EditionLandingPage />} />
+      <Route path="/read/method/:methodSlug" element={<EditionMethodPage />} />
+      <Route path="/read/:domainSlug" element={<EditionDomainPage />} />
+      <Route path="/read/:domainSlug/:sectionSlug" element={<EditionSectionPage />} />
+      <Route path="/preview" element={<ReaderPage />} />
       <Route
         path="*"
         element={

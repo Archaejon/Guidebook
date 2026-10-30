@@ -13,6 +13,38 @@ when the stored shape changes, together with a migration.
 
 ## [Unreleased]
 
+### Added
+
+- **A public reader edition built from a committed file.** The deployed site no
+  longer renders whatever is in the visitor's browser: `/read` is built at
+  deploy time from [content/guidebook.json](content/guidebook.json), a
+  projection of a project containing only `Published` methods and the sections
+  and domains they reach, with a section's `draft` text and a method's author's
+  notes emptied because no reader surface renders them. `npm run content:sync -- <backup.json>` regenerates it
+  from a Settings JSON export, `npm run content:sample` regenerates the shipped
+  sample edition from `src/seed.ts`, and `npm run content:check` fails the build
+  on a draft in the file, a missing or duplicate slug, an unresolvable
+  domain/section, a reserved slug or an unknown format version.
+- **Stable URLs per domain, section and method.** `/read/<domain>`,
+  `/read/<domain>/<section>` and `/read/method/<method>` are derived from slugs
+  recorded in the edition and keyed by record id, so editing a published title
+  does not move or break its page. Sections are unique within their domain,
+  methods across the edition, and `method` is a reserved domain slug so
+  `/read/method/…` cannot be shadowed.
+- **Cross-references resolve to the surface they appear on.** `[[method:…]]`
+  links inside the public edition point at published edition pages; a reference
+  to an unpublished method renders as plain text instead of linking a visitor
+  into a workspace that is not theirs.
+
+### Changed
+
+- **`/read` is the public edition; the workspace reader moved to `/preview`** and
+  is linked from Settings. The reader component (`ReaderMethod`) is shared by
+  both, so a method cannot be edited into looking different from its published
+  form.
+- `npm run build` and `npm run build:pages` validate the committed edition before
+  typechecking.
+
 ## [1.0.0] — 2026-10-21
 
 The first release: a complete local-first authoring environment, published as a

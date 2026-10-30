@@ -15,7 +15,7 @@ Most of the design follows from four constraints. A change that breaks one of th
 
 - **No network at runtime.** No analytics, no telemetry, no fonts or scripts from a CDN, no sync service. The app must work with the tab offline after load. This is why there is no backend and no auth.
 - **Data stays in the browser.** The whole project is one JSON document in IndexedDB, with a `localStorage` fallback (`src/lib/storage.ts`). Anything that moves user data off the device is out of scope.
-- **Drafts never appear in published surfaces.** The reader view (`/read`) and the reader HTML export include only records whose status is `Published`. New reader-facing features must keep that boundary.
+- **Drafts never appear in published surfaces.** The public edition (`/read`, built from `content/guidebook.json`), the local reader preview (`/preview`) and the reader HTML export include only records whose status is `Published`. New reader-facing features must keep that boundary.
 - **No invented scholarship.** The illustrative sample in `src/seed.ts` deliberately contains no real quotations, citations or efficacy claims. If you add sample content, keep it obviously placeholder, and do not attribute wording to a real author.
 
 ## Getting set up

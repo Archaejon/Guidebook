@@ -1,7 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
+/**
+ * Resolves a `[[method:id|label]]` token to a URL, or null when the target is
+ * not part of the surface being rendered. The workspace links to its own
+ * method pages; the public edition links to published edition pages only, so a
+ * reference to an unpublished method degrades to plain text rather than a
+ * link to nowhere.
+ */
+export type MethodHref = (id: string, label: string) => string | null;
+
+function renderInline(text: string, keyPrefix: string, methodHref?: MethodHref): React.ReactNode[] {
   const pattern = /(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|\[\[method:[^\]]+\]\]|\[[^\]]+\]\([^)]+\))/g;
   const parts = text.split(pattern);
   return parts.filter((part) => part !== '').map((part, index) => {
@@ -17,9 +26,22 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
     }
     const methodMatch = /^\[\[method:([^\]|]+)\|([^\]]+)\]\]$/.exec(part);
     if (methodMatch) {
+      const [, methodId, label] = methodMatch;
+      if (methodHref) {
+        const href = methodHref(methodId, label);
+        return href ? (
+          <Link key={key} to={href} className="method-ref">
+            {label}
+          </Link>
+        ) : (
+          <span key={key} className="method-ref unresolved">
+            {label}
+          </span>
+        );
+      }
       return (
-        <Link key={key} to={`/method/${methodMatch[1]}`} className="method-ref">
-          {methodMatch[2]}
+        <Link key={key} to={`/method/${methodId}`} className="method-ref">
+          {label}
         </Link>
       );
     }
@@ -46,9 +68,10 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
 interface MarkdownProps {
   content: string;
   className?: string;
+  methodHref?: MethodHref;
 }
 
-export function Markdown({ content, className = '' }: MarkdownProps) {
+export function Markdown({ content, className = '', methodHref }: MarkdownProps) {
   const lines = content.replace(/\r\n/g, '\n').split('\n');
   const blocks: React.ReactNode[] = [];
   let i = 0;
@@ -81,7 +104,7 @@ export function Markdown({ content, className = '' }: MarkdownProps) {
     if (heading) {
       const level = Math.min(6, heading[1].length);
       const Tag = (`h${level}` as unknown) as keyof JSX.IntrinsicElements;
-      blocks.push(<Tag key={`b-${key++}`}>{renderInline(heading[2], `h-${key}`)}</Tag>);
+      blocks.push(<Tag key={`b-${key++}`}>{renderInline(heading[2], `h-${key}`, methodHref)}</Tag>);
       i += 1;
       continue;
     }
@@ -101,7 +124,7 @@ export function Markdown({ content, className = '' }: MarkdownProps) {
       blocks.push(
         <blockquote key={`b-${key++}`}>
           {quote.map((q, qi) => (
-            <p key={qi}>{renderInline(q, `q-${key}-${qi}`)}</p>
+            <p key={qi}>{renderInline(q, `q-${key}-${qi}`, methodHref)}</p>
           ))}
         </blockquote>,
       );
@@ -117,7 +140,7 @@ export function Markdown({ content, className = '' }: MarkdownProps) {
       blocks.push(
         <ul key={`b-${key++}`}>
           {items.map((item, ii) => (
-            <li key={ii}>{renderInline(item, `ul-${key}-${ii}`)}</li>
+            <li key={ii}>{renderInline(item, `ul-${key}-${ii}`, methodHref)}</li>
           ))}
         </ul>,
       );
@@ -133,7 +156,7 @@ export function Markdown({ content, className = '' }: MarkdownProps) {
       blocks.push(
         <ol key={`b-${key++}`}>
           {items.map((item, ii) => (
-            <li key={ii}>{renderInline(item, `ol-${key}-${ii}`)}</li>
+            <li key={ii}>{renderInline(item, `ol-${key}-${ii}`, methodHref)}</li>
           ))}
         </ol>,
       );
@@ -157,7 +180,7 @@ export function Markdown({ content, className = '' }: MarkdownProps) {
       <p key={`b-${key++}`}>
         {paragraph.map((textLine, li) => (
           <React.Fragment key={li}>
-            {renderInline(textLine, `p-${key}-${li}`)}
+            {renderInline(textLine, `p-${key}-${li}`, methodHref)}
             {li < paragraph.length - 1 ? <br /> : null}
           </React.Fragment>
         ))}

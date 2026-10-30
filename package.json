@@ -18,12 +18,15 @@
   },
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5173",
-    "build": "tsc --noEmit && vite build",
-    "build:pages": "tsc --noEmit && vite build --mode pages && node scripts/pages-postbuild.mjs",
+    "build": "node scripts/check-content.mjs && tsc --noEmit && vite build",
+    "build:pages": "node scripts/check-content.mjs && tsc --noEmit && vite build --mode pages && node scripts/pages-postbuild.mjs",
     "preview": "vite preview --host 127.0.0.1 --port 5174",
     "typecheck": "tsc --noEmit --pretty false",
     "test": "vitest run",
     "test:watch": "vitest",
+    "content:check": "node scripts/check-content.mjs",
+    "content:sync": "node scripts/content-sync.mjs",
+    "content:sample": "node scripts/content-sample.mjs",
     "verify": "npm run typecheck && npm test && npm run build"
   },
   "dependencies": {

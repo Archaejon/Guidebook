@@ -265,9 +265,10 @@ export function SettingsPage() {
               <li>Drafts never leave this browser unless you export them.</li>
               <li>The reader view and reader export include only records marked Published.</li>
               <li>Clearing browser data can erase the project; keep JSON backups.</li>
-              <li>There is no account, cloud sync or public URL.</li>
+              <li>There is no account, cloud sync or public URL for this browser’s workspace.</li>
             </ul>
-            <Link to="/read" className="text-button small">Open local reader view <Icon name="arrow-right" size={13} /></Link>
+            <Link to="/preview" className="text-button small">Open this workspace’s reader view <Icon name="arrow-right" size={13} /></Link>
+            <Link to="/read" className="text-button small">Read the published edition <Icon name="arrow-right" size={13} /></Link>
           </section>
           <section className="panel">
             <p className="eyebrow">Data at a glance</p>
