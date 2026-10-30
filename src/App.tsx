@@ -22,6 +22,7 @@ import {
   EditionDomainPage,
   EditionSectionPage,
   EditionMethodPage,
+  EditionChapterPage,
 } from './pages/Edition';
 import { EmptyState } from './components/ui';
 import { RouteTitle } from './components/RouteTitle';
@@ -75,6 +76,7 @@ export default function App() {
        * router's ranking. The workspace reader moved to /preview.
        */}
       <Route path="/read" element={<EditionLandingPage />} />
+      <Route path="/read/chapter/:chapterSlug" element={<EditionChapterPage />} />
       <Route path="/read/method/:methodSlug" element={<EditionMethodPage />} />
       <Route path="/read/:domainSlug" element={<EditionDomainPage />} />
       <Route path="/read/:domainSlug/:sectionSlug" element={<EditionSectionPage />} />

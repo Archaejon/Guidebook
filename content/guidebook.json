@@ -1,11 +1,11 @@
 {
   "format": "guidebook-edition",
-  "formatVersion": 1,
-  "generatedAt": "2026-10-30T11:20:01.949Z",
+  "formatVersion": 2,
+  "generatedAt": "2026-10-30T11:44:14.608Z",
   "source": {
     "title": "Guidebook for the Future — Reader Edition",
     "authorName": "Author",
-    "commit": "1bcf2ba19c1cd1075610b9a5da578b4481d37a1b"
+    "commit": "bb4ac616f7a34a748fd8e0fc3b0c5050e79fe966"
   },
   "edition": {
     "domains": [
@@ -603,6 +603,47 @@
         "illustrative": true
       }
     ],
+    "documents": [
+      {
+        "id": "doc_part1",
+        "parentId": null,
+        "kind": "part",
+        "title": "Part I — The Individual",
+        "content": "",
+        "status": "Published",
+        "order": 0,
+        "comments": [],
+        "createdAt": "2026-10-30T11:44:14.372Z",
+        "updatedAt": "2026-10-30T11:44:14.372Z",
+        "illustrative": true
+      },
+      {
+        "id": "doc_ch_physical",
+        "parentId": "doc_part1",
+        "kind": "chapter",
+        "title": "Physical Health",
+        "content": "",
+        "status": "Published",
+        "order": 0,
+        "comments": [],
+        "createdAt": "2026-10-30T11:44:14.372Z",
+        "updatedAt": "2026-10-30T11:44:14.372Z",
+        "illustrative": true
+      },
+      {
+        "id": "doc_ch_sleep",
+        "parentId": "doc_ch_physical",
+        "kind": "section",
+        "title": "Sleep and the architecture of a day",
+        "content": "*Illustrative sample chapter. This is a demonstration of the writing environment, not a finished argument.*\n\nSleep is the most ordinary and least negotiable form of recovery. It is also where private routines collide with work, caregiving, light and noise. A guidebook that treats sleep as a personal discipline alone will mislead its reader: the shape of the day is usually set by institutions before an individual ever chooses a bedtime.\n\n## The day has a shape\n\nThe first practical question is not “how do I sleep better?” but “what is my day for?” A day organised around responsiveness — messages, meetings, other people's urgency — tends to dissolve into fragments. A day with a protected beginning and end gives sleep something to attach to.\n\nThree conditions recur in the author's notes:\n\n- A consistent waking time, even after a poor night.\n- Light in the morning and dimness in the evening.\n- A boundary around the last hour, treated as part of the day rather than stolen from it.\n\nNone of these is a cure. Each is a way of making the day legible to the body.\n\n## Rest is not only sleep\n\nSleep is one form of recovery. The weekly rhythm matters too: a day that is not organised around output, time outdoors, and unhurried contact with other people all replenish capacities that sleep alone cannot.\n\n> The question is not how to recover in order to work, but what kind of life is worth recovering for.\n\nThe practical methods connected to this chapter are deliberately modest: [[method:m_strength|Strength Training]] supports the physical capacity that makes an active day possible, and [[method:m_journal|Reflective Journalling]] gives the week a place to be examined rather than merely endured.\n\n## Questions to investigate\n\n1. Which claims about sleep duration and health are robust across populations, and which depend on measurement choices?\n2. How much of the “sleep crisis” is a change in sleep, and how much is a change in how sleep is discussed?\n3. What would a household or workplace policy look like if rest were treated as infrastructure?\n\n*Add sources before turning these notes into claims. This sample deliberately cites none.*",
+        "status": "Published",
+        "order": 0,
+        "comments": [],
+        "createdAt": "2026-10-05T08:00:00.000Z",
+        "updatedAt": "2026-10-18T21:30:00.000Z",
+        "illustrative": true
+      }
+    ],
     "slugs": {
       "dom_physical": "physical-health",
       "dom_emotional": "emotional-intellectual-health",
@@ -612,7 +653,10 @@
       "sec_gardens": "community-gardens-local-food",
       "m_strength": "strength-training",
       "m_journal": "reflective-journalling",
-      "m_garden": "community-gardening"
+      "m_garden": "community-gardening",
+      "doc_part1": "part-i-the-individual",
+      "doc_ch_physical": "physical-health",
+      "doc_ch_sleep": "sleep-and-the-architecture-of-a-day"
     }
   }
 }

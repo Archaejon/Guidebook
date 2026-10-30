@@ -4,9 +4,11 @@ import {
   assignSlugs,
   buildEdition,
   editionProblems,
+  findEditionChapter,
   findEditionDomain,
   findEditionMethod,
   makeEditionFile,
+  readingOrder,
 } from '../edition';
 import { makeProject } from './fixture';
 
@@ -51,6 +53,9 @@ describe('makeEditionFile', () => {
       dom_a: 'physical-health',
       sec_x: 'strength',
       m_alpha: 'sleep-as-infrastructure',
+      doc_part: 'part-one',
+      doc_ch1: 'sleep-and-attention',
+      doc_sub: 'recovery-windows',
     });
   });
 
@@ -58,6 +63,73 @@ describe('makeEditionFile', () => {
     const file = makeEditionFile(makeProject(), { m_beta: 'first-light', dom_b: 'social-health' }, meta);
     expect(file.edition.slugs).not.toHaveProperty('m_beta');
     expect(file.edition.slugs).not.toHaveProperty('dom_b');
+  });
+});
+
+describe('manuscript chapters', () => {
+  it('includes published text and its published ancestors, and nothing else', () => {
+    const file = editionFile();
+    expect(file.edition.documents.map((doc) => doc.id)).toEqual(['doc_part', 'doc_ch1', 'doc_sub']);
+    // doc_part has no text of its own; it is kept as the chapter's part.
+    expect(file.edition.documents[0].content).toBe('');
+  });
+
+  it('builds the tree from parentId and orders it by the authored order', () => {
+    const edition = buildEdition(editionFile());
+    expect(edition.chapters).toHaveLength(1);
+    const [part] = edition.chapters;
+    expect(part.doc.id).toBe('doc_part');
+    expect(part.url).toBe('/read/chapter/part-one');
+    expect(part.children.map((node) => node.doc.id)).toEqual(['doc_ch1']);
+    expect(part.children[0].url).toBe('/read/chapter/sleep-and-attention');
+    expect(part.children[0].children.map((node) => node.doc.id)).toEqual(['doc_sub']);
+    expect(readingOrder(edition.chapters).map((node) => node.doc.id)).toEqual(['doc_part', 'doc_ch1', 'doc_sub']);
+  });
+
+  it('breaks the chain when a parent is a draft, rather than publishing under it', () => {
+    const project = makeProject();
+    project.documents[0].status = 'Draft';
+    const file = makeEditionFile(project, {}, meta);
+    expect(editionProblems(file)).toEqual([]);
+    expect(file.edition.slugs).not.toHaveProperty('doc_part');
+    const edition = buildEdition(file);
+    expect(edition.chapters.map((node) => node.doc.id)).toEqual(['doc_ch1']);
+    expect(edition.chapters[0].doc.parentId).toBeNull();
+  });
+
+  it('never copies review comments', () => {
+    const project = makeProject();
+    project.documents[1].comments = [
+      { id: 'c1', excerpt: 'x', body: 'private remark', resolved: false, createdAt: meta.generatedAt },
+    ];
+    expect(makeEditionFile(project, {}, meta).edition.documents[1].comments).toEqual([]);
+  });
+
+  it('finds a chapter with its trail', () => {
+    const edition = buildEdition(editionFile());
+    const found = findEditionChapter(edition, 'recovery-windows');
+    expect(found?.chapter.doc.id).toBe('doc_sub');
+    expect(found?.trail.map((node) => node.doc.id)).toEqual(['doc_part', 'doc_ch1', 'doc_sub']);
+    expect(findEditionChapter(edition, 'unfinished-chapter')).toBeUndefined();
+  });
+
+  it('rejects a draft chapter, a missing slug and a missing parent', () => {
+    const file = editionFile();
+    file.edition.documents.push({ ...file.edition.documents[1], id: 'doc_draft', status: 'Draft' });
+    file.edition.slugs.doc_draft = 'draft-chapter';
+    delete file.edition.slugs.doc_sub;
+    file.edition.documents[2].parentId = 'doc_missing';
+    const problems = editionProblems(file).join('\n');
+    expect(problems).toMatch(/manuscript node doc_draft is Draft/);
+    expect(problems).toMatch(/manuscript node doc_sub has no slug/);
+    expect(problems).toMatch(/manuscript node doc_sub names parent doc_missing/);
+  });
+
+  it('rejects two chapters sharing a URL', () => {
+    const file = editionFile();
+    file.edition.documents.push({ ...file.edition.documents[1], id: 'doc_twin' });
+    file.edition.slugs.doc_twin = 'sleep-and-attention';
+    expect(editionProblems(file).join('\n')).toMatch(/manuscript nodes doc_ch1 and doc_twin share the slug/);
   });
 });
 
@@ -171,6 +243,6 @@ describe('editionProblems', () => {
   it('rejects an unsupported format version', () => {
     const file = editionFile();
     file.formatVersion = 99;
-    expect(editionProblems(file).join('\n')).toMatch(/this build understands 1/);
+    expect(editionProblems(file).join('\n')).toMatch(/this build understands 2/);
   });
 });

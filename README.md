@@ -78,7 +78,7 @@ Codeberg Pages only publishes a branch once a **Forgejo webhook** points at the 
 
 ## Publishing the edition
 
-The deployed site's `/read` is not the visitor's workspace. It is **the edition committed to this repository**, at [content/guidebook.json](content/guidebook.json): a projection of a project containing only methods whose status is `Published`, plus the sections and domains they reach. So every visitor sees the same guide, a shared link means the same thing to everyone, and no draft, research note, quotation, claim, experiment or unpublished manuscript chapter is ever bundled into the site. Sections contribute their title, description, outcomes, frameworks and questions but never their `draft` text, and a method's author's notes are emptied, because no reader surface renders either.
+The deployed site's `/read` is not the visitor's workspace. It is **the edition committed to this repository**, at [content/guidebook.json](content/guidebook.json): a projection of a project containing only methods and manuscript nodes whose status is `Published`, plus the sections and domains those methods reach. So every visitor sees the same guide, a shared link means the same thing to everyone, and no draft, research note, quotation, claim, experiment or unpublished chapter is ever bundled into the site. Sections contribute their title, description, outcomes, frameworks and questions but never their `draft` text; a method's author's notes and a chapter's review comments are emptied, because no reader surface renders them.
 
 | URL | Page |
 |---|---|
@@ -86,8 +86,11 @@ The deployed site's `/read` is not the visitor's workspace. It is **the edition 
 | `/read/<domain>` | One domain: purpose, outcomes, principles and its published sections |
 | `/read/<domain>/<section>` | One section and the methods published under it |
 | `/read/method/<method>` | One method, rendered as reading material |
+| `/read/chapter/<chapter>` | One published manuscript node, with prev/next through the book |
 
-The browser's own reader — reading IndexedDB and showing published manuscript chapters as well — is the **local preview** at `/preview`, linked from Settings. It is a preview, not the published edition.
+Chapters are published the same way as methods: mark a manuscript node `Published`. A published part or chapter with no text of its own still gets a page listing its published contents, so a written section can sit under its part and chapter with a working breadcrumb; an ancestor that is still a draft breaks the chain instead, and the child appears at the top of the book rather than under a heading nobody published. Reading order follows the studio's own `order` field, and prev/next walks the flattened tree.
+
+The browser's own reader — reading IndexedDB, including published chapters — is the **local preview** at `/preview`, linked from Settings. It is a preview, not the published edition.
 
 ### Regenerating the edition
 
@@ -161,8 +164,8 @@ Manuscript passages reference methods with `[[method:<id>|Label]]`, resolved liv
 - **`selectors.test.ts`** — entity lookup and routes for all ten record types, relationship traversal in both directions, dangling relationships after a deletion, secondary domains and related sections, the inline `[[method:…]]` reverse index (including de-duplication when a document is both linked and mentioned), tree ordering and descendants, word counts, completion scoring and project statistics.
 - **`search.test.ts`** — the ranking ladder (exact title > partial title > tag > body), case/whitespace handling, every filter including date ranges, the 150-result cap, excerpt centring, and the invariant that every result points at a resolvable record and its canonical route.
 - **`exports.test.ts`** — Markdown rendering and escaping (raw HTML in a title must not become markup), manuscript heading order and draft exclusion, plain-text stripping, method and library Markdown, bibliography and unverified-claim output, and the Published-only boundary of the reader HTML.
-- **`edition.test.ts`** — the published-only projection (a draft method and its domain stay out), slug stability across a title change, per-domain and global uniqueness, reserved and malformed slugs, the domain/section/method URL shapes, and every rejection in `editionProblems`.
-- **`editionContent.test.ts`** — the committed `content/guidebook.json` is itself publishable, its URLs are distinct and correctly shaped, and a cross-reference to an unpublished method resolves to nothing.
+- **`edition.test.ts`** — the published-only projection (a draft method and its domain stay out), the manuscript projection (text and its published ancestors only, drafts excluded, comments stripped), slug stability across a title change, per-domain and global uniqueness, reserved and malformed slugs, the domain/section/method/chapter URL shapes, the chapter tree and reading order, and every rejection in `editionProblems`.
+- **`editionContent.test.ts`** — the committed `content/guidebook.json` is itself publishable, its URLs are distinct and correctly shaped, its chapters all resolve by slug, and a cross-reference to an unpublished method resolves to nothing.
 
 `src/lib/__tests__/pageTitle.test.ts` covers the browser-tab titles: heading-first ordering, whitespace collapsing, and the fallback when a page has no heading yet.
 

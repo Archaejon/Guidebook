@@ -106,9 +106,10 @@ Then check the live site rather than trusting the run:
   or the `404.html` fallback). This is the check that catches a broken base path.
 - The browser console is free of errors and the asset requests are 200s with
   `text/css` and `text/javascript` content types.
-- The public edition `/Guidebook/read` shows the methods committed in
-  `content/guidebook.json`, not drafts, and a deep link such as
-  `/Guidebook/read/physical-health/strength` renders that section on reload.
+- The public edition `/Guidebook/read` shows the methods and chapters committed
+  in `content/guidebook.json`, not drafts, and deep links such as
+  `/Guidebook/read/physical-health/strength` and
+  `/Guidebook/read/chapter/sleep-and-the-architecture-of-a-day` render on reload.
   `/Guidebook/preview` is the browser-local reader.
 - Local data survives: open the site, add a note, reload, and confirm it is still
   there. This exercises IndexedDB on the real origin, which local builds do not.

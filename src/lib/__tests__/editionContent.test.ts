@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { editionProblems } from '../edition';
+import { editionProblems, findEditionChapter, readingOrder } from '../edition';
 import { EDITION, EDITION_FILE, EDITION_METHOD_HREF } from '../editionData';
 
 /**
@@ -40,5 +40,19 @@ describe('the committed edition', () => {
     const first = EDITION.methods[0];
     expect(EDITION_METHOD_HREF(first.method.id)).toBe(first.url);
     expect(EDITION_METHOD_HREF('m_a_method_that_is_not_published')).toBeNull();
+  });
+
+  it('serves the published manuscript at chapter URLs', () => {
+    expect(EDITION.chapters.length).toBeGreaterThan(0);
+    const order = readingOrder(EDITION.chapters);
+    expect(new Set(order.map((node) => node.url)).size).toBe(order.length);
+    for (const node of order) {
+      expect(node.url).toBe(`/read/chapter/${node.slug}`);
+      expect(node.doc.status).toBe('Published');
+      expect(findEditionChapter(EDITION, node.slug)?.chapter.doc.id).toBe(node.doc.id);
+    }
+    // The sample nests its one written section under a part and a chapter, so
+    // the text is not at the root; the reading order is what a reader sees.
+    expect(order.some((node) => node.doc.content.trim().length > 0)).toBe(true);
   });
 });

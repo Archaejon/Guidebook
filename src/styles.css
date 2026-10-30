@@ -1760,6 +1760,18 @@ mark { background: #f1e2b8; color: var(--ink); padding: 0 1px; }
 .edition-meta { font-family: var(--sans); font-size: 10.5px; color: var(--muted); margin-top: 18px; }
 .reader-toc a.active { color: var(--ink); font-weight: 600; }
 .edition-toc-domain { display: block; font-family: var(--sans); font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gold); margin: 5px 0 2px; }
+.edition-manuscript { margin-top: 0; border-top: 0; padding-top: 0; }
+.edition-chapter-list { list-style: none; margin: 10px 0 0; padding: 0; }
+.edition-chapter-list > li { padding: 8px 0; border-bottom: 1px dotted var(--line); }
+.edition-chapter-list a { font-family: var(--serif); font-size: 16px; color: var(--ink); }
+.edition-chapter-list > li > span { margin-left: 8px; font-family: var(--sans); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.edition-chapter-list .edition-chapter-list { margin: 8px 0 0 6px; padding-left: 14px; border-left: 1px solid var(--line); }
+.edition-chapter-list .edition-chapter-list > li:last-child { border-bottom: 0; padding-bottom: 0; }
+.edition-pager { display: flex; justify-content: space-between; gap: 16px; margin-top: 40px; border-top: 1px solid var(--line); padding-top: 16px; }
+.edition-pager-link { display: flex; flex-direction: column; gap: 2px; }
+.edition-pager-link span { font-family: var(--sans); font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.edition-pager-link strong { font-family: var(--serif); font-size: 15px; font-weight: 600; color: var(--ink); max-width: 34ch; }
+.edition-pager-link.next { text-align: right; margin-left: auto; }
 .method-ref.unresolved { color: var(--muted); border-bottom: 1px dotted var(--line); }
 
 /* ---------- Responsive ---------- */

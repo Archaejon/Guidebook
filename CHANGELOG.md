@@ -31,10 +31,20 @@ when the stored shape changes, together with a migration.
   does not move or break its page. Sections are unique within their domain,
   methods across the edition, and `method` is a reserved domain slug so
   `/read/method/…` cannot be shadowed.
+- **Published manuscript chapters at stable URLs.** `/read/chapter/<chapter>`
+  renders a published part, chapter, section or subsection, with a breadcrumb
+  through its published ancestors, prev/next through the book in the studio's
+  own order, and cross-references to edition methods. A published ancestor with
+  no text of its own still gets a contents page, so a written section keeps its
+  part; a draft ancestor breaks the chain and its children become roots. Review
+  comments are stripped from the file like drafts and author's notes.
 - **Cross-references resolve to the surface they appear on.** `[[method:…]]`
   links inside the public edition point at published edition pages; a reference
   to an unpublished method renders as plain text instead of linking a visitor
   into a workspace that is not theirs.
+- The edition file format moved to **version 2** for manuscript documents. An
+  older file is refused by the build with an instruction to regenerate, rather
+  than served silently without its chapters.
 
 ### Changed
 

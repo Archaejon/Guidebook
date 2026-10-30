@@ -1,4 +1,4 @@
-import type { Domain, ID, Method, MethodNotes, Project, Section } from '../types';
+import type { Domain, ID, ManuscriptDoc, Method, MethodNotes, Project, Section } from '../types';
 import { slugify as baseSlugify } from './utils';
 
 /**
@@ -14,7 +14,12 @@ import { slugify as baseSlugify } from './utils';
  * trusting the generator, because a hand-edited file is just as possible.
  */
 export const EDITION_FORMAT = 'guidebook-edition';
-export const EDITION_FORMAT_VERSION = 1;
+/**
+ * Version 2 added published manuscript documents. A version 1 file is refused
+ * rather than loaded, because silently publishing a book without its chapters
+ * would look like missing content rather than a stale file.
+ */
+export const EDITION_FORMAT_VERSION = 2;
 
 /**
  * A domain slug of `method` would be shadowed by `/read/method/:slug`, so the
@@ -28,6 +33,8 @@ export interface EditionPick {
   domains: Domain[];
   sections: Section[];
   methods: Method[];
+  /** Published manuscript nodes. Optional so slug assignment can be used alone. */
+  documents?: ManuscriptDoc[];
 }
 
 export interface EditionFile {
@@ -40,7 +47,11 @@ export interface EditionFile {
     authorName: string;
     commit: string;
   };
-  edition: EditionPick & {
+  edition: {
+    domains: Domain[];
+    sections: Section[];
+    methods: Method[];
+    documents: ManuscriptDoc[];
     /** Record id -> URL segment. Persisted so a title edit cannot move a URL. */
     slugs: Record<ID, string>;
   };
@@ -50,6 +61,18 @@ export interface EditionMethod {
   method: Method;
   slug: string;
   url: string;
+}
+
+/**
+ * A published manuscript node. Parts, chapters, sections and subsections share
+ * the chapter URL space, so a part's contents page and a written chapter are
+ * reachable the same way; the page names its own `kind`.
+ */
+export interface EditionChapter {
+  doc: ManuscriptDoc;
+  slug: string;
+  url: string;
+  children: EditionChapter[];
 }
 
 export interface EditionSection {
@@ -76,6 +99,7 @@ export interface PublishedEdition {
   commit: string;
   domains: EditionDomain[];
   methods: EditionMethod[];
+  chapters: EditionChapter[];
 }
 
 export function methodUrl(slug: string): string {
@@ -88,6 +112,10 @@ export function domainUrl(slug: string): string {
 
 export function sectionUrl(domainSlug: string, sectionSlug: string): string {
   return `/read/${domainSlug}/${sectionSlug}`;
+}
+
+export function chapterUrl(slug: string): string {
+  return `/read/chapter/${slug}`;
 }
 
 /** A slug is lowercase words joined by single hyphens. */
@@ -138,6 +166,7 @@ export function assignSlugs(pick: EditionPick, previous: Record<ID, string> = {}
   const usedDomains = new Set<string>(RESERVED_DOMAIN_SLUGS);
   const usedSections = new Map<ID, Set<string>>();
   const usedMethods = new Set<string>();
+  const usedDocuments = new Set<string>();
 
   for (const domain of pick.domains) {
     const slug = uniqueSlug(usableSlug(previous[domain.id]) || slugifyTitle(domain.title), usedDomains);
@@ -159,6 +188,12 @@ export function assignSlugs(pick: EditionPick, previous: Record<ID, string> = {}
     if (previous[method.id] !== slug) added.push({ id: method.id, title: method.title, slug });
   }
 
+  for (const doc of pick.documents ?? []) {
+    const slug = uniqueSlug(usableSlug(previous[doc.id]) || slugifyTitle(doc.title), usedDocuments);
+    slugs[doc.id] = slug;
+    if (previous[doc.id] !== slug) added.push({ id: doc.id, title: doc.title, slug });
+  }
+
   return { slugs, added };
 }
 
@@ -176,11 +211,12 @@ const EMPTY_NOTES: MethodNotes = {
  * sections (or a sectionless method) made it in, so the public structure grows
  * one finished method at a time rather than exposing every planned heading.
  *
- * Two fields are deliberately emptied rather than copied. `section.draft` is
- * the section's unwritten text and `method.notes` is the author's private
- * notebook — neither is rendered by a reader, and the file is public, so
- * leaving them in would ship prose that no reader is meant to have. The
- * structure and the published method fields are everything the pages use.
+ * Three fields are deliberately emptied rather than copied. `section.draft` is
+ * the section's unwritten text, `method.notes` is the author's private notebook
+ * and `document.comments` are review remarks to self — none is rendered by a
+ * reader, and the file is public, so leaving them in would ship prose that no
+ * reader is meant to have. The structure and the published fields are
+ * everything the pages use.
  */
 export function makeEditionFile(
   project: Project,
@@ -199,7 +235,8 @@ export function makeEditionFile(
     ...sections.map((section) => section.domainId),
   ]);
   const domains = project.domains.filter((domain) => domainIds.has(domain.id));
-  const pick: EditionPick = { domains, sections, methods };
+  const documents = publishedDocuments(project.documents);
+  const pick: EditionPick = { domains, sections, methods, documents };
   const { slugs } = assignSlugs(pick, previousSlugs);
 
   return {
@@ -211,8 +248,46 @@ export function makeEditionFile(
       authorName: project.settings.authorName,
       commit: meta.commit,
     },
-    edition: { ...pick, slugs },
+    edition: { domains, sections, methods, documents, slugs },
   };
+}
+
+/**
+ * Published manuscript nodes that belong in the public book: anything with
+ * text, plus the published ancestors of those nodes, so a chapter keeps its
+ * part in the breadcrumb and a part can list its published chapters. A part
+ * with neither text nor published descendants is left out, which is why an
+ * empty outline never appears. An ancestor that is itself a draft breaks the
+ * chain instead: the child becomes a root rather than being published under an
+ * unpublished heading.
+ */
+function publishedDocuments(documents: ManuscriptDoc[]): ManuscriptDoc[] {
+  const published = new Map(
+    documents.filter((doc) => doc.status === 'Published').map((doc) => [doc.id, doc] as const),
+  );
+  const included = new Set<ID>();
+  for (const doc of published.values()) {
+    if (doc.content.trim()) included.add(doc.id);
+  }
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const id of [...included]) {
+      const parentId = published.get(id)?.parentId;
+      if (parentId && published.has(parentId) && !included.has(parentId)) {
+        included.add(parentId);
+        changed = true;
+      }
+    }
+  }
+
+  return documents
+    .filter((doc) => included.has(doc.id))
+    .map((doc) => ({
+      ...doc,
+      parentId: doc.parentId && included.has(doc.parentId) ? doc.parentId : null,
+      comments: [],
+    }));
 }
 
 /**
@@ -228,14 +303,18 @@ export function editionProblems(file: EditionFile): string[] {
   if (file.formatVersion !== EDITION_FORMAT_VERSION) {
     problems.push(`formatVersion is ${file.formatVersion}, this build understands ${EDITION_FORMAT_VERSION}`);
   }
-  const { domains, sections, methods, slugs } = file.edition;
+  const { domains, sections, methods, documents, slugs } = file.edition;
   if (!Array.isArray(domains) || !Array.isArray(sections) || !Array.isArray(methods) || !slugs) {
     problems.push('edition is missing domains, sections, methods or slugs');
     return problems;
   }
+  if (!Array.isArray(documents)) {
+    problems.push('edition is missing documents; regenerate it with npm run content:sync');
+    return problems;
+  }
 
   const seen = new Set<ID>();
-  for (const record of [...domains, ...sections, ...methods]) {
+  for (const record of [...domains, ...sections, ...methods, ...documents]) {
     if (seen.has(record.id)) problems.push(`duplicate record id ${record.id}`);
     seen.add(record.id);
   }
@@ -305,6 +384,26 @@ export function editionProblems(file: EditionFile): string[] {
     usedMethods.set(slug, method.id);
   }
 
+  const documentIds = new Set(documents.map((doc) => doc.id));
+  const usedDocuments = new Map<string, ID>();
+  for (const doc of documents) {
+    if (doc.status !== 'Published') {
+      problems.push(`manuscript node ${doc.id} is ${doc.status}; the edition may only contain Published records`);
+    }
+    if (doc.parentId && !documentIds.has(doc.parentId)) {
+      problems.push(`manuscript node ${doc.id} names parent ${doc.parentId}, which is not in the edition`);
+    }
+    const slug = slugs[doc.id];
+    if (!slug) {
+      problems.push(`manuscript node ${doc.id} has no slug`);
+      continue;
+    }
+    if (!isSlug(slug)) problems.push(`manuscript node ${doc.id} has the invalid slug ${JSON.stringify(slug)}`);
+    const clash = usedDocuments.get(slug);
+    if (clash) problems.push(`manuscript nodes ${clash} and ${doc.id} share the slug ${JSON.stringify(slug)}`);
+    usedDocuments.set(slug, doc.id);
+  }
+
   for (const id of Object.keys(slugs)) {
     if (!seen.has(id)) problems.push(`slug recorded for ${id}, which is not part of the edition`);
   }
@@ -318,7 +417,7 @@ export function editionProblems(file: EditionFile): string[] {
  * rather than an alphabetical accident.
  */
 export function buildEdition(file: EditionFile): PublishedEdition {
-  const { domains, sections, methods, slugs } = file.edition;
+  const { domains, sections, methods, documents, slugs } = file.edition;
   const published = methods.filter((method) => method.status === 'Published');
   const includedSections = new Set(sections.map((section) => section.id));
 
@@ -373,7 +472,61 @@ export function buildEdition(file: EditionFile): PublishedEdition {
         url: methodUrl(slugs[method.id] ?? slugifyTitle(method.title)),
       }))
       .sort((a, b) => a.method.title.localeCompare(b.method.title)),
+    chapters: buildChapters(documents, slugs),
   };
+}
+
+/**
+ * Rebuilds the manuscript tree from the `parentId` links. Ordering matches the
+ * studio's `childDocuments`: the explicit `order` field first, then the title,
+ * so the edition reads in the sequence the author arranged rather than the
+ * order the records happen to sit in the file.
+ */
+function buildChapters(documents: ManuscriptDoc[], slugs: Record<ID, string>): EditionChapter[] {
+  const nodes = new Map<ID, EditionChapter>();
+  for (const doc of documents) {
+    const slug = slugs[doc.id] ?? slugifyTitle(doc.title);
+    nodes.set(doc.id, { doc, slug, url: chapterUrl(slug), children: [] });
+  }
+
+  const roots: EditionChapter[] = [];
+  for (const doc of documents) {
+    const node = nodes.get(doc.id)!;
+    const parent = doc.parentId ? nodes.get(doc.parentId) : undefined;
+    if (parent) parent.children.push(node);
+    else roots.push(node);
+  }
+
+  const sort = (list: EditionChapter[]) => {
+    list.sort((a, b) => a.doc.order - b.doc.order || a.doc.title.localeCompare(b.doc.title));
+    for (const node of list) sort(node.children);
+  };
+  sort(roots);
+  return roots;
+}
+
+/** Depth-first reading order, i.e. the sequence the contents list shows. */
+export function readingOrder(chapters: EditionChapter[]): EditionChapter[] {
+  return chapters.flatMap((node) => [node, ...readingOrder(node.children)]);
+}
+
+export function findEditionChapter(
+  edition: PublishedEdition,
+  slug: string,
+): { chapter: EditionChapter; trail: EditionChapter[] } | undefined {
+  const walk = (
+    nodes: EditionChapter[],
+    trail: EditionChapter[],
+  ): { chapter: EditionChapter; trail: EditionChapter[] } | undefined => {
+    for (const node of nodes) {
+      const next = [...trail, node];
+      if (node.slug === slug) return { chapter: node, trail: next };
+      const found = walk(node.children, next);
+      if (found) return found;
+    }
+    return undefined;
+  };
+  return walk(edition.chapters, []);
 }
 
 export function findEditionDomain(edition: PublishedEdition, slug: string): EditionDomain | undefined {

@@ -4,8 +4,14 @@ import { Icon } from '../components/Icon';
 import { Markdown } from '../components/Markdown';
 import { ReaderMethod } from '../components/ReaderMethod';
 import { EmptyState } from '../components/ui';
-import type { EditionDomain } from '../lib/edition';
-import { findEditionDomain, findEditionMethod, findEditionSection } from '../lib/edition';
+import type { EditionChapter, EditionDomain } from '../lib/edition';
+import {
+  findEditionChapter,
+  findEditionDomain,
+  findEditionMethod,
+  findEditionSection,
+  readingOrder,
+} from '../lib/edition';
 import { EDITION, EDITION_METHOD_HREF } from '../lib/editionData';
 import { formatDate, pluralize } from '../lib/utils';
 
@@ -87,14 +93,31 @@ function EditionToc({
   domainSlug = '',
   sectionSlug = '',
   methodSlug = '',
+  chapterSlug = '',
 }: {
   domainSlug?: string;
   sectionSlug?: string;
   methodSlug?: string;
+  chapterSlug?: string;
 }) {
   return (
     <>
       <p className="eyebrow">Contents</p>
+      {EDITION.chapters.length ? (
+        <div className="reader-toc-group">
+          <span className="edition-toc-domain">Manuscript</span>
+          {readingOrder(EDITION.chapters).map((node) => (
+            <Link
+              key={node.doc.id}
+              to={node.url}
+              className={chapterSlug === node.slug ? 'active' : undefined}
+              aria-current={chapterSlug === node.slug ? 'page' : undefined}
+            >
+              {node.doc.title}
+            </Link>
+          ))}
+        </div>
+      ) : null}
       {EDITION.domains.map((domain) => (
         <div key={domain.domain.id} className="reader-toc-group">
           <Link to={domain.url} className={`edition-toc-domain ${domainSlug === domain.slug ? 'active' : ''}`}>
@@ -173,6 +196,20 @@ function MethodCards({ methods }: { methods: { method: { id: string; title: stri
   );
 }
 
+function ChapterList({ nodes }: { nodes: EditionChapter[] }) {
+  return (
+    <ul className="edition-chapter-list">
+      {nodes.map((node) => (
+        <li key={node.doc.id}>
+          <Link to={node.url}>{node.doc.title}</Link>
+          <span>{node.doc.kind}</span>
+          {node.children.length ? <ChapterList nodes={node.children} /> : null}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function Crumbs({ items }: { items: { label: string; to?: string }[] }) {
   return (
     <nav className="edition-crumbs" aria-label="Breadcrumb">
@@ -245,6 +282,13 @@ export function EditionLandingPage() {
           the deployed site has a real published surface. It is deliberately free of invented citations and efficacy
           claims, and every record here is marked as sample material.
         </p>
+      ) : null}
+
+      {EDITION.chapters.length ? (
+        <section className="edition-index edition-manuscript">
+          <h2>Manuscript</h2>
+          <ChapterList nodes={EDITION.chapters} />
+        </section>
       ) : null}
 
       {EDITION.domains.map((domain) => (
@@ -413,6 +457,75 @@ export function EditionMethodPage() {
       ) : null}
 
       <p className="edition-meta">Last revised {formatDate(method.updatedAt)}.</p>
+    </EditionFrame>
+  );
+}
+
+export function EditionChapterPage() {
+  const { chapterSlug = '' } = useParams();
+  const found = findEditionChapter(EDITION, chapterSlug);
+  if (!found) {
+    return (
+      <EditionMissing
+        title="No such chapter"
+        body={`Nothing published in this edition has the address "${chapterSlug}". A chapter that is still being drafted has no page here.`}
+      />
+    );
+  }
+  const { chapter, trail } = found;
+  const kind = chapter.doc.kind.charAt(0).toUpperCase() + chapter.doc.kind.slice(1);
+  const order = readingOrder(EDITION.chapters);
+  const index = order.findIndex((node) => node.doc.id === chapter.doc.id);
+  const previous = index > 0 ? order[index - 1] : undefined;
+  const next = index >= 0 ? order[index + 1] : undefined;
+
+  return (
+    <EditionFrame
+      kicker={`Manuscript · ${kind}`}
+      title={chapter.doc.title}
+      toc={<EditionToc chapterSlug={chapter.slug} />}
+    >
+      <Crumbs
+        items={[
+          { label: 'Edition', to: '/read' },
+          ...trail.slice(0, -1).map((node) => ({ label: node.doc.title, to: node.url })),
+          { label: chapter.doc.title },
+        ]}
+      />
+
+      {chapter.doc.content.trim() ? (
+        <Markdown content={chapter.doc.content} methodHref={EDITION_METHOD_HREF} />
+      ) : (
+        <p className="edition-note">
+          This {kind.toLowerCase()} has no text of its own yet; what is published beneath it is listed below.
+        </p>
+      )}
+
+      {chapter.children.length ? (
+        <section className="edition-section-block">
+          <h2>Contents</h2>
+          <ChapterList nodes={chapter.children} />
+        </section>
+      ) : null}
+
+      <nav className="edition-pager" aria-label="Manuscript navigation">
+        {previous ? (
+          <Link className="edition-pager-link" to={previous.url}>
+            <span>Previous</span>
+            <strong>{previous.doc.title}</strong>
+          </Link>
+        ) : (
+          <span />
+        )}
+        {next ? (
+          <Link className="edition-pager-link next" to={next.url}>
+            <span>Next</span>
+            <strong>{next.doc.title}</strong>
+          </Link>
+        ) : null}
+      </nav>
+
+      <p className="edition-meta">Last revised {formatDate(chapter.doc.updatedAt)}.</p>
     </EditionFrame>
   );
 }

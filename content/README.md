@@ -4,11 +4,18 @@
 `/read/<domain>`, `/read/<domain>/<section>` and `/read/method/<method>`.
 
 It is **generated, not hand-written**, and it is a *projection* of a project:
-only methods whose status is `Published`, plus the sections and domains those
-methods reach. Notes, drafts, quotations, claims, experiments and the manuscript
-are never written here, so this file can be public even while the project it came
-from is private. A section's `draft` text and a method's `notes` are emptied
-rather than copied: no reader surface renders them, and this file is public.
+only methods and manuscript nodes whose status is `Published`, plus the sections
+and domains those methods reach. Notes, quotations, claims, experiments and
+draft chapters are never written here, so this file can be public even while the
+project it came from is private. A section's `draft` text, a method's `notes` and
+a chapter's review `comments` are emptied rather than copied: no reader surface
+renders them, and this file is public.
+
+Manuscript nodes share one URL space (`/read/chapter/<slug>`), so a part's
+contents page and a written chapter are reachable the same way. A published
+ancestor with no text of its own is kept when a descendant has text, which is
+what gives a chapter its breadcrumb; a draft ancestor is dropped and its
+children become roots.
 
 ## Regenerating
 
@@ -43,6 +50,7 @@ format version fails the build instead of deploying a broken link.
     "domains": [],
     "sections": [],
     "methods": [],
+    "documents": [],
     "slugs": { "<record id>": "<url segment>" }
   }
 }

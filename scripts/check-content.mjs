@@ -27,7 +27,7 @@ try {
   process.exit(1);
 }
 
-const { editionProblems, buildEdition } = await editionApi();
+const { editionProblems, buildEdition, readingOrder } = await editionApi();
 const problems = editionProblems(raw);
 
 if (problems.length) {
@@ -37,10 +37,12 @@ if (problems.length) {
 }
 
 const edition = buildEdition(raw);
-if (!edition.methods.length) {
-  console.log(`content: ${filePath} is valid but has no Published methods; the public edition will be empty.`);
+const chapters = readingOrder(edition.chapters).length;
+if (!edition.methods.length && !chapters) {
+  console.log(`content: ${filePath} is valid but has no Published methods or chapters; the public edition will be empty.`);
 } else {
   console.log(
-    `content: ${edition.methods.length} published method(s) across ${edition.domains.length} domain(s), built from ${raw.source?.commit ?? 'unknown'}`,
+    `content: ${edition.methods.length} published method(s) across ${edition.domains.length} domain(s), ` +
+      `${chapters} manuscript node(s), built from ${raw.source?.commit ?? 'unknown'}`,
   );
 }

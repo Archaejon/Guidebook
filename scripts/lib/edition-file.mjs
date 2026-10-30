@@ -71,6 +71,7 @@ export function describeEdition({ file, edition, changes, meta }, out) {
   const lines = [
     `wrote ${out}`,
     `  ${edition.domains.length} domain(s), ${file.edition.sections.length} section(s), ${edition.methods.length} published method(s)`,
+    `  ${file.edition.documents.length} published manuscript node(s) in ${edition.chapters.length} tree(s)`,
     `  title: ${edition.title}`,
     `  source commit: ${meta.commit}`,
   ];
