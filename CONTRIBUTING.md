@@ -60,7 +60,7 @@ The suite lives in `src/lib/__tests__` and covers the pure logic only — select
 - Put new tests next to the code they exercise, as `*.test.ts`.
 - **Extend [the shared fixture](src/lib/__tests__/fixture.ts) rather than building a project inline.** Its comments explain why each record exists (a published method, a draft reachable only by an inline reference, a relationship pointing at a deleted id, a deliberately old experiment). A fixture record that no test explains is a record nobody understands.
 - Because the tests live under `src/`, `tsc` typechecks them too, and `noUnusedLocals` applies. An unused import in a test fails the build.
-- There is no browser or component testing yet, and `store.tsx` (update semantics, trash/restore, snapshots, migrations) is still verified by hand. Testing it honestly needs a fake IndexedDB and a DOM environment; if you want to add that, say so in an issue first so the approach can be agreed.
+- There is no browser or component testing yet, and `store.tsx` (update semantics, snapshot handling, migrations, the wiring around trash) is still verified by hand. Testing it honestly needs a fake IndexedDB and a DOM environment; if you want to add that, say so in an issue first so the approach can be agreed. The delete/restore rules themselves live in `src/lib/trash.ts` and are covered by `trash.test.ts`.
 
 ## Code conventions
 

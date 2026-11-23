@@ -80,6 +80,26 @@ export function titleFromText(text: string, fallback = 'Untitled'): string {
   return words || fallback;
 }
 
+export type LinkTarget = { kind: 'internal' | 'external'; href: string };
+
+/**
+ * Classifies a Markdown link target, or returns null when it must not become a
+ * link.
+ *
+ * Only `http(s)` URLs and site-relative paths are clickable. Everything else —
+ * `javascript:`, `data:`, `mailto:`, a protocol-relative `//host` — stays as
+ * written. Both renderers use this rule (the React reader and the standalone
+ * HTML export), so the workspace can no longer activate a link that the export
+ * refuses, which is what let the two disagree about a `javascript:` URL.
+ */
+export function linkTarget(raw: string): LinkTarget | null {
+  const href = raw.trim();
+  if (!href) return null;
+  if (/^https?:\/\//i.test(href)) return { kind: 'external', href };
+  if (href.startsWith('/') && !href.startsWith('//')) return { kind: 'internal', href };
+  return null;
+}
+
 export function slugify(value: string): string {
   return value
     .toLowerCase()

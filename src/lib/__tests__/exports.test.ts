@@ -76,6 +76,20 @@ describe('markdownToHtml', () => {
     expect(html).toContain('click');
   });
 
+  it('leaves other schemes and protocol-relative targets as written', () => {
+    for (const target of ['data:text/html,hi', 'mailto:someone@example.com', '//evil.example']) {
+      const html = markdownInlineToHtml(`[click](${target})`, methodTitles);
+      expect(html, target).not.toContain('<a');
+      expect(html, target).toContain(target);
+    }
+  });
+
+  it('does not create a dead site-relative link in the standalone export', () => {
+    const html = markdownInlineToHtml('[read](/method/m_alpha)', methodTitles);
+    expect(html).not.toContain('<a');
+    expect(html).toContain('/method/m_alpha');
+  });
+
   it('escapes quotes and ampersands in inline text', () => {
     expect(markdownInlineToHtml('Tom & "Jerry"\'s', methodTitles)).toBe(
       'Tom &amp; &quot;Jerry&quot;&#39;s',

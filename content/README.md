@@ -31,8 +31,9 @@ npm run content:check                                   # validate only
 `content:sync` keeps the slug of every record already in this file (slugs are
 keyed by record id), so renaming a published method does not move its URL. New
 records get a slug from their title; a collision gets `-2`. Sections are unique
-within their domain, methods across the whole edition, and `method` is reserved
-so `/read/method/<slug>` stays reachable.
+within their domain, methods across the whole edition, and the static segments
+the reader routes own — `method` and `chapter` — are reserved for domains, so
+`/read/method/<slug>` and `/read/chapter/<slug>` stay reachable.
 
 `build` and `build:pages` run `content:check` first, so an edition with a draft
 in it, a missing or duplicate slug, an unresolvable section, or an unknown
@@ -43,7 +44,7 @@ format version fails the build instead of deploying a broken link.
 ```json
 {
   "format": "guidebook-edition",
-  "formatVersion": 1,
+  "formatVersion": 2,
   "generatedAt": "…",
   "source": { "title": "…", "authorName": "…", "commit": "…" },
   "edition": {

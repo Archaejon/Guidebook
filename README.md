@@ -115,7 +115,7 @@ The rules themselves live in [src/lib/edition.ts](src/lib/edition.ts) and are us
 - Nothing is sent to a server. There is no sync, so a cleared browser profile loses the project — hence JSON export and in-browser backup points in Settings.
 - The reader surfaces — the public edition (`/read`), the local preview (`/preview`) and the reader HTML export — contain **only** records whose status is `Published`. Drafts never appear in a published surface.
 - The public edition is a file in this repository, not the visitor's browser: what `/read` shows is what the last commit published. See [Publishing the edition](#publishing-the-edition).
-- Deleting a record moves it to **Recently deleted** (Settings) with restore; manuscript deletions keep the whole subtree.
+- Deleting a record moves it to **Recently deleted** (Settings) with restore. The restore also reinstates what the deletion changed elsewhere: the record's relationships, the section and domain assignments it cleared, and the source links that pointed at it. An assignment made after the deletion is left alone, because it is the newer decision. Manuscript deletions keep the whole subtree, and each node restores on its own.
 - `WorkspaceGate` (in `src/App.tsx`) renders a loading state until the stored project has loaded, so deep links never initialise an editor from placeholder data.
 
 ## Layout
@@ -166,8 +166,10 @@ Manuscript passages reference methods with `[[method:<id>|Label]]`, resolved liv
 - **`exports.test.ts`** — Markdown rendering and escaping (raw HTML in a title must not become markup), manuscript heading order and draft exclusion, plain-text stripping, method and library Markdown, bibliography and unverified-claim output, and the Published-only boundary of the reader HTML.
 - **`edition.test.ts`** — the published-only projection (a draft method and its domain stay out), the manuscript projection (text and its published ancestors only, drafts excluded, comments stripped), slug stability across a title change, per-domain and global uniqueness, reserved and malformed slugs, the domain/section/method/chapter URL shapes, the chapter tree and reading order, and every rejection in `editionProblems`.
 - **`editionContent.test.ts`** — the committed `content/guidebook.json` is itself publishable, its URLs are distinct and correctly shaped, its chapters all resolve by slug, and a cross-reference to an unpublished method resolves to nothing.
+- **`storage.test.ts`** — which stored copy loads: a newer localStorage fallback beats an older IndexedDB record, IndexedDB wins a tie, and an unstamped copy counts as the oldest.
+- **`trash.test.ts`** — a deletion records the relationships it removed and the section, domain and source assignments it cleared; a restore replays all of them for methods, sections, domains, sources and manuscript branches; an assignment made after the deletion survives the restore; and an entry written before effects were recorded still restores.
 
-`src/lib/__tests__/pageTitle.test.ts` covers the browser-tab titles: heading-first ordering, whitespace collapsing, and the fallback when a page has no heading yet.
+`src/lib/__tests__/pageTitle.test.ts` covers the browser-tab titles: heading-first ordering, whitespace collapsing, and the fallback when a page has no heading yet. `src/lib/__tests__/links.test.ts` covers the link policy both renderers share: only `http(s)` URLs and site-relative paths become links, so `javascript:`, `data:`, `mailto:` and protocol-relative targets stay inert in the workspace and in the HTML export alike.
 
 `src/lib/__tests__/fixture.ts` builds the project the tests share. Its comments record why each record exists (a published method, a draft that is reachable only by inline reference, a relationship pointing at a deleted id, an old experiment for date filters). Extend it rather than building ad-hoc projects in individual tests.
 

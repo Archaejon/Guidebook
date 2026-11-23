@@ -383,12 +383,40 @@ export interface Relationship {
   createdAt: string;
 }
 
+export type TrashCollection = 'methods' | 'sections' | 'notes' | 'quotations' | 'claims';
+
+/** A field on a record that a deletion changed, and how. */
+export interface TrashFieldChange {
+  collection: TrashCollection;
+  id: ID;
+  field: string;
+}
+
+/**
+ * What a deletion changed on *other* records, so a restore can put it back.
+ *
+ * Deleting a record is not a pure removal: relationships pointing at it go, a
+ * method sitting in the deleted section is unassigned, a note loses its
+ * source. Without this the record came back alone and those links were lost
+ * for good.
+ */
+export interface TrashEffects {
+  /** Relationships removed because they pointed at the deleted record. */
+  relationships: Relationship[];
+  /** A single-value reference the deletion blanked, and the id it held. */
+  cleared: (TrashFieldChange & { previous: ID })[];
+  /** An id the deletion took out of a list field. */
+  detached: (TrashFieldChange & { value: ID })[];
+}
+
 export interface TrashItem {
   id: ID;
   entityType: string;
   label: string;
   deletedAt: string;
   data: unknown;
+  /** Absent on entries written before effects were recorded. */
+  effects?: TrashEffects;
 }
 
 export interface DashboardSettings {

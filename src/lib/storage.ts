@@ -41,16 +41,28 @@ function idbGet<T>(store: string, key: string): Promise<T | undefined> {
   );
 }
 
+/**
+ * Resolves only when the transaction has committed.
+ *
+ * A request's `onsuccess` fires before the write is durable: the transaction
+ * can still abort afterwards (quota, a closed database), and resolving there
+ * would report a save that never landed. The request is only used for its
+ * error, which is the useful fallback when the transaction has none.
+ */
+function idbWrite(tx: IDBTransaction, req: IDBRequest): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error ?? req.error ?? new Error('Local database write failed'));
+    tx.onabort = () => reject(tx.error ?? new Error('Local database write was aborted'));
+  });
+}
+
 function idbPut(store: string, value: unknown, key?: string): Promise<void> {
-  return openDb().then(
-    (db) =>
-      new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(store, 'readwrite');
-        const req = key ? tx.objectStore(store).put(value, key) : tx.objectStore(store).put(value);
-        req.onsuccess = () => resolve();
-        req.onerror = () => reject(req.error);
-      }),
-  );
+  return openDb().then((db) => {
+    const tx = db.transaction(store, 'readwrite');
+    const req = key ? tx.objectStore(store).put(value, key) : tx.objectStore(store).put(value);
+    return idbWrite(tx, req);
+  });
 }
 
 function idbGetAll<T>(store: string): Promise<T[]> {
@@ -66,40 +78,100 @@ function idbGetAll<T>(store: string): Promise<T[]> {
 }
 
 function idbDelete(store: string, key: string): Promise<void> {
-  return openDb().then(
-    (db) =>
-      new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(store, 'readwrite');
-        const req = tx.objectStore(store).delete(key);
-        req.onsuccess = () => resolve();
-        req.onerror = () => reject(req.error);
-      }),
-  );
+  return openDb().then((db) => {
+    const tx = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).delete(key);
+    return idbWrite(tx, req);
+  });
 }
 
-export async function loadProject(): Promise<Project | null> {
+/** One durable copy of the project, and where it was found. */
+export interface StoredCopy {
+  project: Project;
+  /** `meta.lastSavedAt` as epoch ms, or -1 when the copy carries no stamp. */
+  savedAt: number;
+  source: 'indexeddb' | 'localstorage';
+}
+
+function copySavedAt(project: Project): number {
+  const raw = (project as { meta?: { lastSavedAt?: string } }).meta?.lastSavedAt;
+  const parsed = raw ? Date.parse(raw) : NaN;
+  return Number.isNaN(parsed) ? -1 : parsed;
+}
+
+/**
+ * Prefers IndexedDB on a tie, but a *newer* fallback copy wins.
+ *
+ * A save can succeed in localStorage after IndexedDB refused it (quota, private
+ * mode). That fallback copy is the user's latest work, so returning the older
+ * IndexedDB record — the old behaviour — silently rolled the project back on
+ * the next load.
+ */
+export function newestCopy(primary: StoredCopy | null, fallback: StoredCopy | null): StoredCopy | null {
+  if (!primary) return fallback;
+  if (!fallback) return primary;
+  return fallback.savedAt > primary.savedAt ? fallback : primary;
+}
+
+async function readStoredCopy(): Promise<StoredCopy | null> {
   try {
-    const stored = await idbGet<Project>('state', STATE_KEY);
-    if (stored) return stored;
+    const project = await idbGet<Project>('state', STATE_KEY);
+    if (project) return { project, savedAt: copySavedAt(project), source: 'indexeddb' };
   } catch {
-    // fall through to localStorage
-  }
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (raw) return JSON.parse(raw) as Project;
-  } catch {
-    // corrupted local fallback
+    // IndexedDB is unavailable; the fallback below may still hold a copy.
   }
   return null;
 }
 
-export async function saveProject(project: Project): Promise<void> {
+function readFallbackCopy(): StoredCopy | null {
   try {
-    await idbPut('state', project, STATE_KEY);
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return null;
+    const project = JSON.parse(raw) as Project | null;
+    if (!project || typeof project !== 'object') return null;
+    return { project, savedAt: copySavedAt(project), source: 'localstorage' };
   } catch {
-    // Still try localStorage as a fallback; it may fail for very large projects.
-    localStorage.setItem(LS_KEY, JSON.stringify(project));
+    // Unreadable or corrupted fallback: treat it as absent.
+    return null;
   }
+}
+
+export async function loadProject(): Promise<Project | null> {
+  const copy = newestCopy(await readStoredCopy(), readFallbackCopy());
+  return copy ? copy.project : null;
+}
+
+let lastWriteStamp = 0;
+
+/**
+ * A strictly increasing timestamp, so two saves in the same millisecond cannot
+ * tie and leave "which copy is newer?" ambiguous.
+ */
+function nextSavedAt(): string {
+  lastWriteStamp = Math.max(Date.now(), lastWriteStamp + 1);
+  return new Date(lastWriteStamp).toISOString();
+}
+
+/**
+ * Persists the project and returns the `lastSavedAt` it actually wrote.
+ *
+ * The stamp is applied here rather than by the caller so both stores record
+ * when their own copy was written; `loadProject` compares them, and a fallback
+ * write must not be mistaken for an older record.
+ *
+ * A refused IndexedDB write is retried through localStorage. If the fallback
+ * also fails the error propagates, because a save that reached neither store
+ * must not be reported as saved.
+ */
+export async function saveProject(project: Project): Promise<string> {
+  const savedAt = nextSavedAt();
+  const stamped: Project = { ...project, meta: { ...project.meta, lastSavedAt: savedAt } };
+  try {
+    await idbPut('state', stamped, STATE_KEY);
+  } catch {
+    localStorage.setItem(LS_KEY, JSON.stringify(stamped));
+  }
+  return savedAt;
 }
 
 export async function clearProject(): Promise<void> {
@@ -120,6 +192,11 @@ export async function listSnapshots(): Promise<Snapshot[]> {
   }
 }
 
+/**
+ * Writes a backup point. A failed write propagates: callers use a snapshot as
+ * the safety net before a destructive action, so reporting success for a write
+ * that did not happen would let that action run unprotected.
+ */
 export async function createSnapshot(project: Project, label: string): Promise<Snapshot> {
   const snapshot: Snapshot = {
     id: `snap_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
@@ -127,12 +204,12 @@ export async function createSnapshot(project: Project, label: string): Promise<S
     label,
     project,
   };
+  await idbPut('snapshots', snapshot);
   try {
-    await idbPut('snapshots', snapshot);
     const all = await listSnapshots();
     for (const old of all.slice(SNAPSHOT_LIMIT)) await idbDelete('snapshots', old.id);
   } catch {
-    // Snapshots are best-effort; saving still works without them.
+    // Pruning old points is housekeeping; the new snapshot is already stored.
   }
   return snapshot;
 }

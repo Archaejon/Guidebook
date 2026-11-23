@@ -44,7 +44,9 @@ export function SettingsPage() {
 
   const importFile = async (file: File) => {
     try {
-      await createBackup('Before importing a backup');
+      // Importing replaces the project, so it only proceeds once the current
+      // state is stored. createBackup reports the failure itself.
+      if (!(await createBackup('Before importing a backup', false))) return;
       const text = await file.text();
       const parsed = JSON.parse(text) as { project?: Project; format?: string } | Project;
       const candidate = 'project' in parsed && parsed.project ? parsed.project : (parsed as Project);
@@ -290,7 +292,7 @@ export function SettingsPage() {
         onClose={() => setConfirmKind(null)}
         onConfirm={() => {
           const run = async () => {
-            await createBackup('Before reset');
+            if (!(await createBackup('Before reset', false))) return;
             if (confirmKind === 'sample') await resetToSample();
             if (confirmKind === 'empty') await resetToEmpty();
             if (confirmKind === 'clear') await clearAllData();

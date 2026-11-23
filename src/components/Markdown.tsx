@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { linkTarget } from '../lib/utils';
 
 /**
  * Resolves a `[[method:id|label]]` token to a URL, or null when the target is
@@ -48,15 +49,20 @@ function renderInline(text: string, keyPrefix: string, methodHref?: MethodHref):
     const linkMatch = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(part);
     if (linkMatch) {
       const [, label, href] = linkMatch;
-      if (href.startsWith('/')) {
+      // The same rule the HTML export applies: a scheme that is not http(s) is
+      // not activated, so the text stays exactly as written rather than
+      // becoming a live `javascript:` or `data:` link.
+      const target = linkTarget(href);
+      if (!target) return <React.Fragment key={key}>{part}</React.Fragment>;
+      if (target.kind === 'internal') {
         return (
-          <Link key={key} to={href}>
+          <Link key={key} to={target.href}>
             {label}
           </Link>
         );
       }
       return (
-        <a key={key} href={href} target="_blank" rel="noreferrer noopener">
+        <a key={key} href={target.href} target="_blank" rel="noreferrer noopener">
           {label}
         </a>
       );

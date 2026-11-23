@@ -22,11 +22,20 @@ export const EDITION_FORMAT = 'guidebook-edition';
 export const EDITION_FORMAT_VERSION = 2;
 
 /**
- * A domain slug of `method` would be shadowed by `/read/method/:slug`, so the
- * router could never reach it. Reserved here so the generator cannot produce
- * one and the checker rejects a hand-written one.
+ * Every static segment the reader routes already own under `/read/`.
+ *
+ * A domain is reached at `/read/:domainSlug`, and a static route outranks a
+ * dynamic one, so a domain slugged with a static segment is unreachable:
+ * `method` is shadowed by `/read/method/:methodSlug`, and `chapter` by
+ * `/read/chapter/:chapterSlug`. The second is worse than a dead domain page —
+ * every section of such a domain would be looked up as a chapter, because
+ * `/read/chapter/<section>` matches the chapter route first.
+ *
+ * Add a word here whenever a static `/read/…` route is added to the router.
+ * Reserving it means the generator cannot produce a shadowed slug (a colliding
+ * title gets `-2`) and `editionProblems` rejects a hand-written one.
  */
-export const RESERVED_DOMAIN_SLUGS = ['method'];
+export const RESERVED_DOMAIN_SLUGS = ['method', 'chapter'];
 
 /** The slice of a project the edition is built from. */
 export interface EditionPick {

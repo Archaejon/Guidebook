@@ -171,6 +171,15 @@ describe('assignSlugs', () => {
     expect(slugs[domain.id]).toBe('method-2');
     expect(slugs[odd.id]).toBe('untitled');
   });
+
+  it('keeps a domain off every static segment the reader routes own', () => {
+    const project = makeProject();
+    const chapter = { ...project.domains[0], title: 'Chapter' };
+    const { slugs } = assignSlugs({ domains: [chapter], sections: [], methods: [] });
+    // `/read/chapter/<section>` would be resolved as a chapter lookup, so the
+    // slug is taken; the title still reads as written on the page itself.
+    expect(slugs[chapter.id]).toBe('chapter-2');
+  });
 });
 
 describe('buildEdition', () => {
@@ -238,6 +247,12 @@ describe('editionProblems', () => {
     const file = editionFile();
     file.edition.slugs.dom_a = 'method';
     expect(editionProblems(file).join('\n')).toMatch(/reserved slug "method"/);
+  });
+
+  it('rejects a domain slugging to "chapter", whose section URLs the router would shadow', () => {
+    const file = editionFile();
+    file.edition.slugs.dom_a = 'chapter';
+    expect(editionProblems(file).join('\n')).toMatch(/reserved slug "chapter"/);
   });
 
   it('rejects an unsupported format version', () => {

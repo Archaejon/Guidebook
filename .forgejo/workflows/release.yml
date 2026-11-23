@@ -27,7 +27,7 @@ jobs:
       image: node:20-bookworm
     steps:
       - name: Check out the tagged commit
-        uses: actions/checkout@v4
+        uses: https://code.forgejo.org/actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Publish the release

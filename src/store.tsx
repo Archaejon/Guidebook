@@ -10,6 +10,7 @@ import {
   saveProject,
 } from './lib/storage';
 import { now, uid } from './lib/factory';
+import { restoreRecord, trashRecord } from './lib/trash';
 
 type SaveState = 'loading' | 'saved' | 'saving' | 'error';
 
@@ -38,26 +39,18 @@ interface StoreValue {
   purgeTrash: (trashId: string) => void;
   snapshots: Snapshot[];
   refreshSnapshots: () => Promise<void>;
-  createBackup: (label?: string) => Promise<void>;
+  /**
+   * Writes a backup point and returns whether it landed. `announce: false` is for
+   * the safety net before a destructive action, whose caller reports the outcome
+   * itself; a failure is always announced.
+   */
+  createBackup: (label?: string, announce?: boolean) => Promise<boolean>;
   restoreSnapshot: (snapshot: Snapshot) => Promise<void>;
   removeSnapshot: (id: string) => Promise<void>;
   clearAllData: () => Promise<void>;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
-
-const COLLECTIONS: { key: keyof Project; entityType: string }[] = [
-  { key: 'sections', entityType: 'section' },
-  { key: 'methods', entityType: 'method' },
-  { key: 'documents', entityType: 'document' },
-  { key: 'sources', entityType: 'source' },
-  { key: 'notes', entityType: 'note' },
-  { key: 'quotations', entityType: 'quotation' },
-  { key: 'claims', entityType: 'claim' },
-  { key: 'experiments', entityType: 'experiment' },
-  { key: 'domains', entityType: 'domain' },
-  { key: 'inbox', entityType: 'inbox' },
-];
 
 export function normalizeProject(input: Project): Project {
   const base = createSeedProject();
@@ -142,8 +135,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(async () => {
       try {
-        const savedAt = now();
-        await saveProject({ ...project, meta: { ...project.meta, lastSavedAt: savedAt } });
+        const savedAt = await saveProject(project);
         dirtyRef.current = false;
         setLastSavedAt(savedAt);
         setSaveState('saved');
@@ -159,7 +151,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const flush = () => {
       if (dirtyRef.current) {
-        void saveProject({ ...project, meta: { ...project.meta, lastSavedAt: now() } });
+        void saveProject(project);
       }
     };
     const onVisibility = () => {
@@ -183,12 +175,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const replaceProject = useCallback(async (next: Project) => {
-    setProject(normalizeProject(next));
+    const normalized = normalizeProject(next);
+    setProject(normalized);
     setReady(true);
     try {
-      await saveProject(normalizeProject(next));
+      const savedAt = await saveProject(normalized);
       setSaveState('saved');
-      setLastSavedAt(now());
+      setLastSavedAt(savedAt);
     } catch {
       setSaveState('error');
     }
@@ -288,93 +281,32 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const trashEntity = useCallback(
     (entityType: string, id: string, label: string) => {
+      let moved = false;
       update((draft) => {
-        const collection = COLLECTIONS.find((c) => c.entityType === entityType);
-        if (collection) {
-          const arr = draft[collection.key] as { id: string }[];
-          const idx = arr.findIndex((item) => item.id === id);
-          if (idx >= 0) {
-            const data = arr[idx];
-            draft.trash.unshift({
-              id: uid('trash'),
-              entityType,
-              label,
-              deletedAt: now(),
-              data,
-            });
-            arr.splice(idx, 1);
-          }
-        }
-        draft.relationships = draft.relationships.filter((r) => r.fromId !== id && r.toId !== id);
-        if (entityType === 'document') {
-          // Remove descendant documents too, storing each so the whole branch can be restored.
-          const descendants: string[] = [];
-          const collect = (parentId: string) => {
-            for (const doc of draft.documents.filter((d) => d.parentId === parentId)) {
-              descendants.push(doc.id);
-              collect(doc.id);
-            }
-          };
-          collect(id);
-          for (const childId of descendants) {
-            const idx = draft.documents.findIndex((d) => d.id === childId);
-            if (idx >= 0) {
-              draft.trash.unshift({
-                id: uid('trash'),
-                entityType: 'document',
-                label: draft.documents[idx].title,
-                deletedAt: now(),
-                data: draft.documents[idx],
-              });
-              draft.documents.splice(idx, 1);
-            }
-          }
-          draft.relationships = draft.relationships.filter((r) => !descendants.includes(r.fromId) && !descendants.includes(r.toId));
-        }
-        if (entityType === 'section') {
-          for (const m of draft.methods) {
-            if (m.primarySectionId === id) m.primarySectionId = '';
-            m.relatedSectionIds = m.relatedSectionIds.filter((sid) => sid !== id);
-          }
-          for (const s of draft.sections) {
-            s.relatedSectionIds = s.relatedSectionIds.filter((sid) => sid !== id);
-          }
-        }
-        if (entityType === 'domain') {
-          // Domains are structural; deleting one unassigns its sections rather than orphaning records.
-          for (const s of draft.sections) if (s.domainId === id) s.domainId = '';
-          for (const m of draft.methods) {
-            if (m.primaryDomainId === id) m.primaryDomainId = '';
-            m.secondaryDomainIds = m.secondaryDomainIds.filter((d) => d !== id);
-          }
-        }
-        if (entityType === 'source') {
-          for (const note of draft.notes) if (note.sourceId === id) note.sourceId = '';
-          for (const quote of draft.quotations) if (quote.sourceId === id) quote.sourceId = '';
-          for (const claim of draft.claims) claim.sourceIds = claim.sourceIds.filter((s) => s !== id);
-        }
+        moved = trashRecord(draft, entityType, id, label) !== null;
       });
-      toast(`“${label}” moved to Recently deleted in Settings. You can restore it there.`);
+      toast(
+        moved
+          ? `“${label}” moved to Recently deleted in Settings. You can restore it there.`
+          : `“${label}” could not be deleted because it is no longer in the project.`,
+        moved ? undefined : 'error',
+      );
     },
     [toast, update],
   );
 
   const restoreTrash = useCallback(
     (trashId: string) => {
+      let restored = false;
       update((draft) => {
-        const idx = draft.trash.findIndex((t) => t.id === trashId);
-        if (idx < 0) return;
-        const item = draft.trash[idx];
-        const collection = COLLECTIONS.find((c) => c.entityType === item.entityType);
-        if (collection) {
-          const arr = draft[collection.key] as unknown as { id: string }[];
-          if (!arr.some((r) => r.id === (item.data as { id: string }).id)) {
-            arr.push(item.data as { id: string });
-          }
-          draft.trash.splice(idx, 1);
-        }
+        restored = restoreRecord(draft, trashId);
       });
-      toast('Record restored.', 'success');
+      toast(
+        restored
+          ? 'Record restored, with the connections and assignments it had before it was deleted.'
+          : 'That record could not be restored.',
+        restored ? 'success' : 'error',
+      );
     },
     [toast, update],
   );
@@ -389,22 +321,35 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   );
 
   const createBackup = useCallback(
-    async (label = 'Manual backup point') => {
-      await createSnapshot(project, label);
+    async (label = 'Manual backup point', announce = true) => {
+      try {
+        await createSnapshot(project, label);
+      } catch {
+        // The snapshot is the safety net for what comes next, so a refused
+        // write must stop the caller rather than be reported as a backup.
+        toast(
+          'Could not create a backup point in this browser — storage may be full, blocked or unavailable. No changes were made.',
+          'error',
+        );
+        return false;
+      }
       await refreshSnapshots();
-      toast('Backup point created in this browser.', 'success');
+      if (announce) toast('Backup point created in this browser.', 'success');
+      return true;
     },
     [project, refreshSnapshots, toast],
   );
 
   const restoreSnapshot = useCallback(
     async (snapshot: Snapshot) => {
-      await createSnapshot(project, `Before restoring: ${snapshot.label}`);
+      // Restoring overwrites the current project, so it may only proceed once
+      // the current state is safely stored.
+      if (!(await createBackup(`Before restoring: ${snapshot.label}`, false))) return;
       await replaceProject(snapshot.project);
       await refreshSnapshots();
       toast(`Restored “${snapshot.label}”. The previous state was saved first.`, 'success');
     },
-    [project, replaceProject, refreshSnapshots, toast],
+    [createBackup, replaceProject, refreshSnapshots, toast],
   );
 
   const removeSnapshot = useCallback(

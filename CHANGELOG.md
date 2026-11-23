@@ -54,6 +54,34 @@ when the stored shape changes, together with a migration.
   form.
 - `npm run build` and `npm run build:pages` validate the committed edition before
   typechecking.
+- **Restoring a deleted record restores what its deletion changed.** A deletion
+  now records the relationships it removed and the section, domain and source
+  assignments it cleared, and a restore replays them. An assignment made after
+  the deletion is newer and is left alone; trash entries written before this
+  change still restore, as before, without their links.
+- `chapter` is reserved as a domain slug alongside `method`, so a domain cannot
+  shadow `/read/chapter/…` and send its sections to the chapter route.
+
+### Fixed
+
+- **A save is only reported once it has landed.** IndexedDB writes now resolve
+  when the transaction commits rather than when the request succeeds, so a
+  transaction aborted afterwards (quota, a closed database) is an error, not a
+  silent loss.
+- **A newer localStorage copy is no longer ignored on load.** When IndexedDB
+  refused a save and the fallback took it, the next load returned the older
+  IndexedDB record and rolled the project back. Both copies are now stamped
+  when written and the newer one wins.
+- **Import, reset and snapshot restore stop if the backup point fails.** They
+  used to carry on after a refused snapshot write, replacing the project with
+  no way back.
+- **Unsafe link targets stay inert everywhere.** The workspace and the HTML
+  export now share one rule: only `http(s)` URLs and site-relative paths become
+  links, so `javascript:`, `data:`, `mailto:` and `//host` targets render as the
+  text written. The standalone export no longer links site-relative paths it
+  cannot resolve.
+- The release workflow uses the Forgejo-hosted checkout action, like the CI and
+  deploy workflows.
 
 ## [1.0.0] — 2026-10-21
 

@@ -9,7 +9,7 @@ import {
   orderedDocuments,
   relationshipsFor,
 } from './selectors';
-import { downloadFile, formatDate, slugify, stripMarkdown, wordCount } from './utils';
+import { downloadFile, formatDate, linkTarget, slugify, stripMarkdown, wordCount } from './utils';
 
 function escapeHtml(value: string): string {
   return value
@@ -29,7 +29,15 @@ export function markdownInlineToHtml(text: string, methodTitles: Map<string, str
     const title = methodTitles.get(id) ?? label;
     return `<a class="method-ref" href="#method-${escapeHtml(id)}">${escapeHtml(title)}</a>`;
   });
-  out = out.replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="$2" rel="noreferrer noopener">$1</a>');
+  out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, label: string, raw: string) => {
+    const target = linkTarget(raw);
+    // The export is a standalone file, so a site-relative link would point at a
+    // route that does not exist there; only absolute web links are clickable.
+    // `raw` is already HTML-escaped above, so it is inserted without escaping
+    // again. A rejected target keeps the text exactly as the author wrote it.
+    if (!target || target.kind !== 'external') return match;
+    return `<a href="${target.href}" rel="noreferrer noopener">${label}</a>`;
+  });
   return out;
 }
 
