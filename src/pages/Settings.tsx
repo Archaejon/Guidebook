@@ -4,6 +4,7 @@ import { useStore, normalizeProject } from '../store';
 import type { Project, Snapshot } from '../types';
 import { Icon } from '../components/Icon';
 import { ConfirmDialog, PageHeader } from '../components/ui';
+import { CollaborateSection } from '../components/Collaborate';
 import {
   downloadBibliography,
   downloadJsonBackup,
@@ -34,6 +35,7 @@ export function SettingsPage() {
     saveState,
     lastSavedAt,
     toast,
+    shared,
   } = useStore();
   const fileInput = useRef<HTMLInputElement>(null);
   const [confirmKind, setConfirmKind] = useState<ConfirmKind>(null);
@@ -118,6 +120,8 @@ export function SettingsPage() {
             </div>
           </section>
 
+          <CollaborateSection />
+
           <section className="panel settings-section">
             <div className="panel-head">
               <div><p className="eyebrow">Portability</p><h2>Export the project</h2></div>
@@ -163,6 +167,7 @@ export function SettingsPage() {
             </div>
           </section>
 
+          {shared ? null : (
           <section className="panel settings-section">
             <div className="panel-head">
               <div><p className="eyebrow">Restore</p><h2>Import a backup</h2></div>
@@ -185,6 +190,7 @@ export function SettingsPage() {
               <Icon name="upload" size={15} /> Choose a backup file
             </button>
           </section>
+          )}
 
           <section className="panel settings-section">
             <div className="panel-head">
@@ -203,7 +209,7 @@ export function SettingsPage() {
                       <span>{formatDateTime(snapshot.createdAt)} · {manuscriptWords(snapshot.project).toLocaleString()} manuscript words</span>
                     </div>
                     <div className="snapshot-actions">
-                      <button className="button ghost small" onClick={() => setRestoreTarget(snapshot)}>Restore</button>
+                      {shared ? null : <button className="button ghost small" onClick={() => setRestoreTarget(snapshot)}>Restore</button>}
                       <button className="icon-button subtle" onClick={() => void removeSnapshot(snapshot.id)} aria-label="Delete backup point"><Icon name="trash" size={14} /></button>
                     </div>
                   </div>
@@ -240,6 +246,7 @@ export function SettingsPage() {
             )}
           </section>
 
+          {shared ? null : (
           <section className="panel settings-section danger-zone">
             <div className="panel-head">
               <div><p className="eyebrow">Reset</p><h2>Project data</h2></div>
@@ -253,16 +260,24 @@ export function SettingsPage() {
               <button className="button danger" onClick={() => setConfirmKind('clear')}>Erase local data</button>
             </div>
           </section>
+          )}
         </div>
 
         <aside className="settings-side">
           <section className="panel privacy-panel">
             <p className="eyebrow">Privacy</p>
-            <h2>Private by default</h2>
-            <p>
-              This app is a local authoring environment. Data is saved in this browser’s IndexedDB with a localStorage fallback; it is not sent to a
-              server and is not synchronised between devices.
-            </p>
+            <h2>{shared ? 'Shared by invitation' : 'Private by default'}</h2>
+            {shared ? (
+              <p>
+                This shared project syncs directly between the browsers that hold its invite link, encrypted in transit. Each keeps
+                a full copy in its own storage; there is no server copy. Your own project stays private in this browser.
+              </p>
+            ) : (
+              <p>
+                This app is a local authoring environment. Data is saved in this browser’s IndexedDB with a localStorage fallback; it is not sent to a
+                server and is not synchronised between devices, unless you start or join a shared project.
+              </p>
+            )}
             <ul>
               <li>Drafts never leave this browser unless you export them.</li>
               <li>The reader view and reader export include only records marked Published.</li>

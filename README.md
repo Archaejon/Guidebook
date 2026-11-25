@@ -30,7 +30,7 @@ npm run test:watch   # re-run tests on change
 npm run verify       # typecheck + tests + production build, i.e. what CI runs
 ```
 
-React 18 + TypeScript + Vite 7, `react-router-dom` 7 for routes. No backend, no accounts, no network calls at runtime.
+React 18 + TypeScript + Vite 7, `react-router-dom` 7 for routes. No backend and no accounts. The app makes no network calls unless you start or join a shared project (see [Writing together](#writing-together)).
 
 ## Configuration
 
@@ -112,11 +112,23 @@ The rules themselves live in [src/lib/edition.ts](src/lib/edition.ts) and are us
 
 - The whole project is a single JSON document persisted to **IndexedDB** (`guidebook-future`) with a **localStorage** fallback (`src/lib/storage.ts`).
 - Debounced autosave (~650 ms) after any change; `pagehide`/`visibilitychange` flushes pending edits. The sidebar shows saved / saving / error state.
-- Nothing is sent to a server. There is no sync, so a cleared browser profile loses the project — hence JSON export and in-browser backup points in Settings.
+- Nothing is sent to a server. The personal project never syncs, so a cleared browser profile loses it — hence JSON export and in-browser backup points in Settings. A shared project syncs only between the browsers holding its invite link; see [Writing together](#writing-together).
 - The reader surfaces — the public edition (`/read`), the local preview (`/preview`) and the reader HTML export — contain **only** records whose status is `Published`. Drafts never appear in a published surface.
 - The public edition is a file in this repository, not the visitor's browser: what `/read` shows is what the last commit published. See [Publishing the edition](#publishing-the-edition).
 - Deleting a record moves it to **Recently deleted** (Settings) with restore. The restore also reinstates what the deletion changed elsewhere: the record's relationships, the section and domain assignments it cleared, and the source links that pointed at it. An assignment made after the deletion is left alone, because it is the newer decision. Manuscript deletions keep the whole subtree, and each node restores on its own.
 - `WorkspaceGate` (in `src/App.tsx`) renders a loading state until the stored project has loaded, so deep links never initialise an editor from placeholder data.
+
+## Writing together
+
+Two or more people can edit one project live. **Settings → Collaborate → Create shared project** makes a shared project, either from a copy of the current one or empty, and gives you an invite link to send. Whoever opens the link picks a display name and joins. Both of you then edit the same methods, manuscript, research and connections, and see each other's changes within a second or two.
+
+- **A separate project.** A shared project is its own workspace. Your personal project stays private in this browser, and the sidebar shows which one is open. Settings lists every shared project in this browser and switches between them with a reload.
+- **The invite link is the key.** It looks like `…/join#r=<room>&k=<key>&n=<name>`. The part after `#` is never sent to any server, including the one hosting the site. Anyone holding the link can read and edit, there are no accounts, and access can't be revoked; to cut someone off, start a new shared project. Opening the link replaces its own browser-history entry, so the key doesn't linger there.
+- **Peer to peer, end-to-end encrypted.** Browsers find each other through public [Nostr](https://nostr.com) relays, using Trystero's default strategy. The relays see only a handshake encrypted with the link's key, under a topic derived from the room ID. After that, the project travels directly between browsers over WebRTC, which is itself encrypted. There is no server copy. Public STUN servers help browsers behind home routers connect, so each browser learns the other's network address, as on a video call. A network that blocks peer-to-peer traffic (some offices and mobile carriers) won't connect, because no TURN relay is configured.
+- **Be online together.** Changes pass between people only while both have the app open. Each browser keeps a full copy and keeps working offline, and everything merges the next time you're both connected. A guest who joins sees a "waiting" banner until the host's project arrives.
+- **How edits merge.** The project is mirrored into a [Yjs](https://yjs.dev) document (`src/lib/collab/bridge.ts`), with one map per record and one entry per field. Text fields are collaborative text, so two people typing in different parts of a chapter both keep their words. Other fields (lists, statuses, numbers) take the most recent write. Open editors fold a collaborator's change into what's on screen without losing unsaved typing, and they save only the fields the person changed, so a stale copy never overwrites someone else's edit (`src/lib/collab/rebase.ts`, `useRecordBase.ts`). If both people change the same stretch of text at the same moment, the person typing wins on their own screen and the last save wins in the shared copy.
+- **What is not shared.** Dashboard layout, titles in Settings and your display name stay per person. Import, reset and restoring a backup point are hidden in a shared project, because they would replace the project for everyone. Backup points and JSON export still work.
+- **Only when used.** Yjs and Trystero load only when a shared project is opened (a separate ~53 kB gzipped chunk). The public `/read` edition and the personal workspace never download them or touch the network.
 
 ## Layout
 
@@ -137,6 +149,7 @@ src/
     editionData.ts    the bundled committed edition
     pageTitle.ts      browser-tab titles derived from the page heading
     utils.ts          markdown helpers, word count, downloadFile
+    collab/           shared projects: invite links, Yjs bridge, editor merge, peer-to-peer session
     __tests__/        Vitest suite + the shared project fixture
   components/         Layout, RouteTitle, ErrorBoundary, ui primitives (Modal, ConfirmDialog,
                       LinkDialog), Markdown, ReaderMethod, create dialogs
@@ -167,6 +180,7 @@ Manuscript passages reference methods with `[[method:<id>|Label]]`, resolved liv
 - **`edition.test.ts`** — the published-only projection (a draft method and its domain stay out), the manuscript projection (text and its published ancestors only, drafts excluded, comments stripped), slug stability across a title change, per-domain and global uniqueness, reserved and malformed slugs, the domain/section/method/chapter URL shapes, the chapter tree and reading order, and every rejection in `editionProblems`.
 - **`editionContent.test.ts`** — the committed `content/guidebook.json` is itself publishable, its URLs are distinct and correctly shaped, its chapters all resolve by slug, and a cross-reference to an unpublished method resolves to nothing.
 - **`storage.test.ts`** — which stored copy loads: a newer localStorage fallback beats an older IndexedDB record, IndexedDB wins a tie, and an unstamped copy counts as the oldest.
+- **`collab.test.ts`** — the single-splice text diff and three-way text merge (both edits kept when they don't overlap, mine kept when they do, surrogate pairs never split, caret shifting), record rebase and changed-field saves, an editor saving while a collaborator edits the same record (no revert, no duplicated text), and the Yjs bridge: round trip, per-person settings, a guest's first sync, concurrent field edits and concurrent typing in one chapter converging, additions and deletions placed where the app lists them, and no-op writes.
 - **`trash.test.ts`** — a deletion records the relationships it removed and the section, domain and source assignments it cleared; a restore replays all of them for methods, sections, domains, sources and manuscript branches; an assignment made after the deletion survives the restore; and an entry written before effects were recorded still restores.
 
 `src/lib/__tests__/pageTitle.test.ts` covers the browser-tab titles: heading-first ordering, whitespace collapsing, and the fallback when a page has no heading yet. `src/lib/__tests__/links.test.ts` covers the link policy both renderers share: only `http(s)` URLs and site-relative paths become links, so `javascript:`, `data:`, `mailto:` and protocol-relative targets stay inert in the workspace and in the HTML export alike.

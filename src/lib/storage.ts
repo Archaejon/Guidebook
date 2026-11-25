@@ -221,3 +221,34 @@ export async function deleteSnapshot(id: string): Promise<void> {
     // ignore
   }
 }
+
+/**
+ * A shared workspace's Yjs document, stored as one encoded update per room.
+ * It lives beside the personal project in the same `state` store but under its
+ * own key, so joining or leaving a shared project never touches the personal
+ * one.
+ */
+function roomKey(room: string): string {
+  return `room:${room}`;
+}
+
+export async function loadRoomState(room: string): Promise<Uint8Array | null> {
+  try {
+    const stored = await idbGet<Uint8Array>('state', roomKey(room));
+    return stored ? new Uint8Array(stored) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveRoomState(room: string, state: Uint8Array): Promise<void> {
+  await idbPut('state', state, roomKey(room));
+}
+
+export async function deleteRoomState(room: string): Promise<void> {
+  try {
+    await idbDelete('state', roomKey(room));
+  } catch {
+    // Already gone or storage unavailable: nothing left to remove.
+  }
+}

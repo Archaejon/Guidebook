@@ -64,6 +64,60 @@ function SaveWarning() {
   );
 }
 
+/** Who is here, for the sidebar of a shared project. */
+function CollabIndicator() {
+  const { shared, collab } = useStore();
+  if (!shared) return null;
+  const peers = collab?.peers ?? [];
+  const status = collab?.status ?? 'connecting';
+  const label =
+    status === 'offline'
+      ? 'Offline: changes will sync when you reconnect'
+      : peers.length
+        ? `With ${peers.map((p) => p.name).join(', ')}`
+        : 'Waiting for collaborators';
+  return (
+    <Link to="/settings#collaborate" className={`collab-indicator collab-${peers.length ? 'connected' : status}`}>
+      <span className="collab-dot" aria-hidden="true" />
+      <span>
+        <strong>Shared: {shared.name}</strong>
+        <small>{label}</small>
+      </span>
+    </Link>
+  );
+}
+
+/**
+ * The states of a shared project someone must not miss: a guest who has not
+ * received the project yet (an empty workspace is otherwise alarming), and a
+ * browser that could not keep its copy.
+ */
+function CollabBanner() {
+  const { shared, collab, awaitingFirstSync } = useStore();
+  if (!shared) return null;
+  if (collab?.persistFailed) {
+    return (
+      <div className="save-warning" role="alert">
+        <Icon name="alert" size={16} />
+        <p>
+          <strong>This browser could not store its copy of “{shared.name}”.</strong> Your changes still reach anyone
+          connected, but if you close this tab before they receive them, they will be lost.
+        </p>
+      </div>
+    );
+  }
+  if (!awaitingFirstSync) return null;
+  return (
+    <div className="collab-banner" role="status" aria-live="polite">
+      <Icon name="clock" size={16} />
+      <p>
+        <strong>Waiting for “{shared.name}” to arrive.</strong> The project comes directly from whoever invited you, so
+        they need to have the app open too. It appears here as soon as you are connected.
+      </p>
+    </div>
+  );
+}
+
 function NavItem({
   to,
   label,
@@ -89,7 +143,7 @@ function NavItem({
 }
 
 function SidebarContent({ close }: { close?: () => void }) {
-  const { project } = useStore();
+  const { project, shared } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [query, setQuery] = useState('');
@@ -179,13 +233,14 @@ function SidebarContent({ close }: { close?: () => void }) {
       </div>
 
       <div className="sidebar-foot">
+        <CollabIndicator />
         <SaveIndicator />
         <NavLink to="/settings" className={({ isActive }) => `sidebar-settings ${isActive ? 'active' : ''}`} onClick={close}>
           <Icon name="settings" size={16} />
           <span>Settings &amp; export</span>
         </NavLink>
         <p className="privacy-note">
-          <Icon name="bookmark" size={12} /> Local workspace. Private by default.
+          <Icon name="bookmark" size={12} /> {shared ? 'Shared with whoever holds the invite link.' : 'Local workspace. Private by default.'}
         </p>
       </div>
     </>
@@ -213,6 +268,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <div className="focus-shell">
         <main className="focus-main" id="main">
           <SaveWarning />
+          <CollabBanner />
           {children}
         </main>
         <ToastHost />
@@ -256,6 +312,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       <main className="main-content" id="main" tabIndex={-1}>
         <SaveWarning />
+        <CollabBanner />
         {children}
       </main>
 

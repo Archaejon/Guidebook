@@ -11,6 +11,20 @@ import {
 } from './lib/storage';
 import { now, uid } from './lib/factory';
 import { restoreRecord, trashRecord } from './lib/trash';
+import {
+  activeSharedWorkspace,
+  displayName,
+  forgetWorkspace,
+  newSharedWorkspace,
+  rememberWorkspace,
+  setActiveWorkspace,
+  setDisplayName,
+  type SharedWorkspace,
+} from './lib/collab/invite';
+import type { CollabSession, CollabState } from './lib/collab/session';
+import { deleteRoomState } from './lib/storage';
+
+type CollabRuntime = typeof import('./lib/collab/runtime');
 
 type SaveState = 'loading' | 'saved' | 'saving' | 'error';
 
@@ -48,6 +62,20 @@ interface StoreValue {
   restoreSnapshot: (snapshot: Snapshot) => Promise<void>;
   removeSnapshot: (id: string) => Promise<void>;
   clearAllData: () => Promise<void>;
+  /** The open shared project, or null in the personal workspace. */
+  shared: SharedWorkspace | null;
+  /** Connection state of the open shared project. */
+  collab: CollabState | null;
+  /** True until a guest has received anything from the host. */
+  awaitingFirstSync: boolean;
+  myName: string;
+  setMyName: (name: string) => void;
+  /** Creates a shared project from a copy of this one (or an empty one) and opens it. */
+  startSharedProject: (name: string, source: 'copy' | 'empty') => Promise<void>;
+  /** Reloads into a shared project, or the personal one for null. */
+  switchWorkspace: (room: string | null) => void;
+  /** Forgets a shared project on this browser and deletes its local copy. */
+  leaveSharedProject: (room: string) => Promise<void>;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -76,6 +104,98 @@ export function normalizeProject(input: Project): Project {
   return project;
 }
 
+/** A blank project: the five domains as scaffolding and one empty part. */
+export function createEmptyProject(): Project {
+  const seeded = createSeedProject();
+  return {
+    ...seeded,
+    sections: [],
+    methods: [],
+    sources: [],
+    notes: [],
+    quotations: [],
+    claims: [],
+    experiments: [],
+    inbox: [],
+    relationships: [],
+    trash: [],
+    documents: [
+      { ...seeded.documents[0], id: 'doc_part1', title: 'Part I — The Individual', content: '', comments: [] },
+    ],
+    domains: seeded.domains.map((d) => ({
+      ...d,
+      intro: '',
+      purpose: '',
+      outcomes: [],
+      principles: [],
+      connections: [],
+      questions: [],
+      illustrative: false,
+    })),
+    settings: {
+      ...seeded.settings,
+      dashboard: { ...seeded.settings.dashboard, pinnedSectionIds: [] },
+    },
+  };
+}
+
+/**
+ * What a guest starts from before the host's project arrives: no records at
+ * all, so nothing of theirs can leak into the shared project.
+ */
+function blankSharedBase(name: string): Project {
+  const seeded = createSeedProject();
+  const empty = Object.fromEntries(
+    (['domains', 'sections', 'methods', 'documents', 'sources', 'notes', 'quotations', 'claims', 'experiments', 'inbox', 'relationships', 'trash'] as const).map((k) => [k, []]),
+  );
+  return {
+    ...seeded,
+    ...empty,
+    settings: { ...seeded.settings, projectTitle: name, dashboard: { ...seeded.settings.dashboard, pinnedSectionIds: [] } },
+  } as Project;
+}
+
+/** Per-person settings for a shared project, which the shared document never carries. */
+function sharedSettingsKey(room: string): string {
+  return `guidebook-future:shared-settings:${room}`;
+}
+
+function loadSharedSettings(room: string): Project['settings'] | null {
+  try {
+    const raw = localStorage.getItem(sharedSettingsKey(room));
+    return raw ? (JSON.parse(raw) as Project['settings']) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveSharedSettings(room: string, settings: Project['settings']): void {
+  try {
+    localStorage.setItem(sharedSettingsKey(room), JSON.stringify(settings));
+  } catch {
+    // Storage blocked: settings fall back to defaults next visit.
+  }
+}
+
+function workspaceUrl(path = ''): string {
+  return `${import.meta.env.BASE_URL.replace(/\/?$/, '/')}${path}`;
+}
+
+/**
+ * Opens `path` with a full page load, which is how the store switches
+ * workspace. `location.assign` to the current page with only a different
+ * `#fragment` would merely scroll, leaving the old workspace open.
+ */
+function reloadInto(path = ''): void {
+  const target = new URL(workspaceUrl(path), window.location.href);
+  if (target.pathname === window.location.pathname && target.search === window.location.search) {
+    window.history.replaceState(null, '', target);
+    window.location.reload();
+  } else {
+    window.location.assign(target);
+  }
+}
+
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [project, setProject] = useState<Project>(() => createSeedProject());
   const [ready, setReady] = useState(false);
@@ -86,6 +206,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const dirtyRef = useRef(false);
   const skipSaveRef = useRef(true);
   const saveTimer = useRef<number | null>(null);
+  // Fixed for the life of the page: switching workspace reloads.
+  const [shared] = useState<SharedWorkspace | null>(() => activeSharedWorkspace());
+  const [collab, setCollab] = useState<CollabState | null>(null);
+  const [awaitingFirstSync, setAwaitingFirstSync] = useState(false);
+  const [myName, setMyNameState] = useState(() => displayName());
+  const sessionRef = useRef<CollabSession | null>(null);
+  const runtimeRef = useRef<CollabRuntime | null>(null);
+  /** The project as last written to (or read from) the shared document. */
+  const syncedRef = useRef<Project | null>(null);
+  /** Set when the next project change came from a collaborator, not this screen. */
+  const fromRemoteRef = useRef(false);
 
   const toast = useCallback((message: string, kind: Toast['kind'] = 'info') => {
     const id = uid('toast');
@@ -102,6 +233,55 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (!shared) return;
+    let cancelled = false;
+    let unsubscribe = () => {};
+    (async () => {
+      const runtime = await import('./lib/collab/runtime');
+      const session = new runtime.CollabSession(shared, () => displayName() || 'A collaborator');
+      await session.load();
+      if (cancelled) return;
+      runtimeRef.current = runtime;
+      sessionRef.current = session;
+      const base = blankSharedBase(shared.name);
+      base.settings = { ...base.settings, ...(loadSharedSettings(shared.room) ?? {}) };
+      const initial = runtime.readProject(session.doc, base);
+      syncedRef.current = initial;
+      setProject(initial);
+      setAwaitingFirstSync(runtime.isEmptyDoc(session.doc));
+      setReady(true);
+      setSaveState('saved');
+      session.doc.on('update', (_update: Uint8Array, origin: unknown) => {
+        if (origin !== 'remote') return;
+        setAwaitingFirstSync(false);
+        setProject((prev) => {
+          // A local edit may be rendered but not yet written (its effect runs
+          // after the render). Write it first, or reading would drop it.
+          if (prev !== syncedRef.current) {
+            runtime.writeProject(session.doc, syncedRef.current, prev, 'local');
+            syncedRef.current = prev;
+          }
+          const next = runtime.readProject(session.doc, prev);
+          if (next === prev) return prev;
+          syncedRef.current = next;
+          fromRemoteRef.current = true;
+          return next;
+        });
+      });
+      unsubscribe = session.subscribe(setCollab);
+      session.connect();
+      void refreshSnapshots();
+    })();
+    return () => {
+      cancelled = true;
+      unsubscribe();
+      void sessionRef.current?.destroy();
+      sessionRef.current = null;
+    };
+  }, [shared, refreshSnapshots]);
+
+  useEffect(() => {
+    if (shared) return;
     let cancelled = false;
     (async () => {
       const stored = await loadProject();
@@ -122,10 +302,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [refreshSnapshots]);
+  }, [shared, refreshSnapshots]);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || !shared) return;
+    const session = sessionRef.current;
+    const runtime = runtimeRef.current;
+    if (!session || !runtime) return;
+    saveSharedSettings(shared.room, project.settings);
+    if (fromRemoteRef.current) {
+      fromRemoteRef.current = false;
+      return;
+    }
+    // Local edits go to collaborators at once: editors already wait for a
+    // pause in typing, and the session batches the write to disk itself.
+    runtime.writeProject(session.doc, syncedRef.current, project, 'local');
+    syncedRef.current = project;
+    const savedAt = now();
+    setLastSavedAt(savedAt);
+    setSaveState('saved');
+  }, [project, ready, shared]);
+
+  useEffect(() => {
+    if (!ready || shared) return;
     if (skipSaveRef.current) {
       skipSaveRef.current = false;
       return;
@@ -146,10 +345,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return () => {
       if (saveTimer.current) window.clearTimeout(saveTimer.current);
     };
-  }, [project, ready]);
+  }, [project, ready, shared]);
 
   useEffect(() => {
     const flush = () => {
+      if (shared) {
+        void sessionRef.current?.persist();
+        return;
+      }
       if (dirtyRef.current) {
         void saveProject(project);
       }
@@ -163,7 +366,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener('pagehide', flush);
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, [project]);
+  }, [project, shared]);
 
   const update = useCallback((mutator: (draft: Project) => void) => {
     setProject((prev) => {
@@ -175,6 +378,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const replaceProject = useCallback(async (next: Project) => {
+    if (shared) {
+      // Replacing a shared project would replace it for every collaborator.
+      // Settings hides these actions in a shared project; this is the backstop.
+      throw new Error('Replacing the project is not available in a shared project.');
+    }
     const normalized = normalizeProject(next);
     setProject(normalized);
     setReady(true);
@@ -185,7 +393,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     } catch {
       setSaveState('error');
     }
-  }, []);
+  }, [shared]);
 
   const resetToSample = useCallback(async () => {
     const seeded = createSeedProject();
@@ -194,38 +402,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [replaceProject, toast]);
 
   const resetToEmpty = useCallback(async () => {
-    const seeded = createSeedProject();
-    const empty: Project = {
-      ...seeded,
-      sections: [],
-      methods: [],
-      sources: [],
-      notes: [],
-      quotations: [],
-      claims: [],
-      experiments: [],
-      inbox: [],
-      relationships: [],
-      trash: [],
-      documents: [
-        { ...seeded.documents[0], id: 'doc_part1', title: 'Part I — The Individual', content: '', comments: [] },
-      ],
-      domains: seeded.domains.map((d) => ({
-        ...d,
-        intro: '',
-        purpose: '',
-        outcomes: [],
-        principles: [],
-        connections: [],
-        questions: [],
-        illustrative: false,
-      })),
-      settings: {
-        ...seeded.settings,
-        dashboard: { ...seeded.settings.dashboard, pinnedSectionIds: [] },
-      },
-    };
-    await replaceProject(empty);
+    await replaceProject(createEmptyProject());
     toast('Started an empty project. The five domains remain as scaffolding.', 'success');
   }, [replaceProject, toast]);
 
@@ -368,6 +545,49 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     toast('Local data cleared and the sample project restored.', 'success');
   }, [refreshSnapshots, replaceProject, toast]);
 
+  const setMyName = useCallback((name: string) => {
+    setDisplayName(name);
+    setMyNameState(displayName());
+    sessionRef.current?.announce();
+  }, []);
+
+  const switchWorkspace = useCallback((room: string | null) => {
+    void sessionRef.current?.persist();
+    setActiveWorkspace(room);
+    reloadInto();
+  }, []);
+
+  const startSharedProject = useCallback(
+    async (name: string, source: 'copy' | 'empty') => {
+      const workspace = newSharedWorkspace(name);
+      const runtime = await import('./lib/collab/runtime');
+      const seed = source === 'copy' ? structuredClone(project) : createEmptyProject();
+      try {
+        await runtime.seedSharedProject(workspace.room, seed);
+      } catch {
+        toast('Could not create the shared project: this browser refused to store it.', 'error');
+        return;
+      }
+      saveSharedSettings(workspace.room, { ...seed.settings, projectTitle: workspace.name });
+      rememberWorkspace(workspace);
+      setActiveWorkspace(workspace.room);
+      reloadInto('settings#collaborate');
+    },
+    [project, toast],
+  );
+
+  const leaveSharedProject = useCallback(async (room: string) => {
+    if (sessionRef.current?.workspace.room === room) await sessionRef.current.destroy();
+    await deleteRoomState(room);
+    try {
+      localStorage.removeItem(sharedSettingsKey(room));
+    } catch {
+      // Nothing to remove.
+    }
+    forgetWorkspace(room);
+    reloadInto();
+  }, []);
+
   const value = useMemo<StoreValue>(
     () => ({
       project,
@@ -392,6 +612,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       restoreSnapshot,
       removeSnapshot,
       clearAllData,
+      shared,
+      collab,
+      awaitingFirstSync,
+      myName,
+      setMyName,
+      startSharedProject,
+      switchWorkspace,
+      leaveSharedProject,
     }),
     [
       project,
@@ -416,6 +644,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       restoreSnapshot,
       removeSnapshot,
       clearAllData,
+      shared,
+      collab,
+      awaitingFirstSync,
+      myName,
+      setMyName,
+      startSharedProject,
+      switchWorkspace,
+      leaveSharedProject,
     ],
   );
 

@@ -15,6 +15,19 @@ when the stored shape changes, together with a migration.
 
 ### Added
 
+- **Live co-editing in shared projects.** Settings → Collaborate creates a
+  shared project (a copy of this one, or empty) and an invite link. Whoever
+  opens the link joins and edits it live: methods, manuscript, research and
+  connections. Browsers connect peer to peer over WebRTC, introduced by public
+  Nostr relays that see only a handshake encrypted with the link's key, and
+  each keeps a full copy. Text fields merge character by character, so two
+  people writing in different parts of a chapter both keep their words. Open
+  editors fold in a collaborator's changes without losing unsaved typing, and
+  save only the fields the person changed. The caret stays put when text lands
+  above it. A shared project is separate from the private personal one, and
+  the sidebar shows who is connected. Yjs and Trystero load only when a shared
+  project is opened.
+
 - **A public reader edition built from a committed file.** The deployed site no
   longer renders whatever is in the visitor's browser: `/read` is built at
   deploy time from [content/guidebook.json](content/guidebook.json), a

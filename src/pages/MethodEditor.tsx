@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../store';
+import { saveDraft, useRecordBase } from '../lib/collab/useRecordBase';
 import type { Method, MethodSectionKey } from '../types';
 import { METHOD_STATUSES, SCALES } from '../types';
 import { Icon } from '../components/Icon';
@@ -29,6 +30,7 @@ export function MethodEditorPage() {
   const navigate = useNavigate();
   const method = project.methods.find((m) => m.id === methodId);
   const [draft, setDraft] = useState<Method | null>(method ? structuredClone(method) : null);
+  const baseRef = useRecordBase(method, setDraft);
   const [tab, setTab] = useState<TabKey>('identity');
   const [dirty, setDirty] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -57,7 +59,7 @@ export function MethodEditorPage() {
       update((projectDraft) => {
         const target = projectDraft.methods.find((m) => m.id === draft.id);
         if (!target) return;
-        Object.assign(target, { ...structuredClone(draft), updatedAt: now(), illustrative: false });
+        saveDraft(baseRef, target, draft, { updatedAt: now(), illustrative: false });
       });
       setDirty(false);
       dirtyRef.current = false;
@@ -83,7 +85,7 @@ export function MethodEditorPage() {
         const latest = draftRef.current;
         update((projectDraft) => {
           const target = projectDraft.methods.find((m) => m.id === latest.id);
-          if (target) Object.assign(target, { ...structuredClone(latest), updatedAt: now(), illustrative: false });
+          if (target) saveDraft(baseRef, target, latest, { updatedAt: now(), illustrative: false });
         });
       }
     };
@@ -93,7 +95,7 @@ export function MethodEditorPage() {
     if (!draft) return;
     update((projectDraft) => {
       const target = projectDraft.methods.find((m) => m.id === draft.id);
-      if (target) Object.assign(target, { ...structuredClone(draft), updatedAt: now(), illustrative: false });
+      if (target) saveDraft(baseRef, target, draft, { updatedAt: now(), illustrative: false });
     });
     setDirty(false);
     dirtyRef.current = false;

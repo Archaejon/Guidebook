@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../store';
+import { saveDraft, useRecordBase } from '../lib/collab/useRecordBase';
 import type { Experiment, ExperimentScale, ExperimentStatus } from '../types';
 import { EXPERIMENT_SCALES, EXPERIMENT_STATUSES } from '../types';
 import { Icon } from '../components/Icon';
@@ -134,6 +135,7 @@ export function ExperimentDetailPage() {
   const navigate = useNavigate();
   const experiment = project.experiments.find((e) => e.id === experimentId);
   const [draft, setDraft] = useState<Experiment | null>(experiment ? structuredClone(experiment) : null);
+  const baseRef = useRecordBase(experiment, setDraft);
   const [dirty, setDirty] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [linking, setLinking] = useState(false);
@@ -160,7 +162,7 @@ export function ExperimentDetailPage() {
     const timer = window.setTimeout(() => {
       update((projectDraft) => {
         const target = projectDraft.experiments.find((e) => e.id === draft.id);
-        if (target) Object.assign(target, { ...structuredClone(draft), updatedAt: now(), illustrative: false });
+        if (target) saveDraft(baseRef, target, draft, { updatedAt: now(), illustrative: false });
       });
       setDirty(false);
       dirtyRef.current = false;
@@ -175,7 +177,7 @@ export function ExperimentDetailPage() {
         const latest = draftRef.current;
         update((projectDraft) => {
           const target = projectDraft.experiments.find((e) => e.id === latest.id);
-          if (target) Object.assign(target, { ...structuredClone(latest), updatedAt: now(), illustrative: false });
+          if (target) saveDraft(baseRef, target, latest, { updatedAt: now(), illustrative: false });
         });
       }
     };
@@ -199,7 +201,7 @@ export function ExperimentDetailPage() {
     if (!draft) return;
     update((projectDraft) => {
       const target = projectDraft.experiments.find((e) => e.id === draft.id);
-      if (target) Object.assign(target, { ...structuredClone(draft), updatedAt: now(), illustrative: false });
+      if (target) saveDraft(baseRef, target, draft, { updatedAt: now(), illustrative: false });
     });
     setDirty(false);
     dirtyRef.current = false;

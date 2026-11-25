@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../store';
+import { saveDraft, useRecordBase } from '../lib/collab/useRecordBase';
 import type { ReadingNote } from '../types';
 import { Icon } from '../components/Icon';
 import { ConfirmDialog, EmptyState, LinkDialog } from '../components/ui';
@@ -15,6 +16,7 @@ export function NoteEditorPage() {
   const navigate = useNavigate();
   const note = project.notes.find((n) => n.id === noteId);
   const [draft, setDraft] = useState<ReadingNote | null>(note ? structuredClone(note) : null);
+  const baseRef = useRecordBase(note, setDraft);
   const [dirty, setDirty] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [preview, setPreview] = useState(false);
@@ -42,7 +44,7 @@ export function NoteEditorPage() {
     const timer = window.setTimeout(() => {
       update((projectDraft) => {
         const target = projectDraft.notes.find((n) => n.id === draft.id);
-        if (target) Object.assign(target, { ...structuredClone(draft), updatedAt: now(), illustrative: false });
+        if (target) saveDraft(baseRef, target, draft, { updatedAt: now(), illustrative: false });
       });
       setDirty(false);
       dirtyRef.current = false;
@@ -57,7 +59,7 @@ export function NoteEditorPage() {
         const latest = draftRef.current;
         update((projectDraft) => {
           const target = projectDraft.notes.find((n) => n.id === latest.id);
-          if (target) Object.assign(target, { ...structuredClone(latest), updatedAt: now(), illustrative: false });
+          if (target) saveDraft(baseRef, target, latest, { updatedAt: now(), illustrative: false });
         });
       }
     };
@@ -81,7 +83,7 @@ export function NoteEditorPage() {
     if (!draft) return;
     update((projectDraft) => {
       const target = projectDraft.notes.find((n) => n.id === draft.id);
-      if (target) Object.assign(target, { ...structuredClone(draft), updatedAt: now(), illustrative: false });
+      if (target) saveDraft(baseRef, target, draft, { updatedAt: now(), illustrative: false });
     });
     setDirty(false);
     dirtyRef.current = false;

@@ -17,6 +17,7 @@ import { SearchPage } from './pages/SearchPage';
 import { InboxPage } from './pages/Inbox';
 import { SettingsPage } from './pages/Settings';
 import { ReaderPage } from './pages/Reader';
+import { JoinPage } from './pages/Join';
 import {
   EditionLandingPage,
   EditionDomainPage,
@@ -81,6 +82,7 @@ export default function App() {
       <Route path="/read/:domainSlug" element={<EditionDomainPage />} />
       <Route path="/read/:domainSlug/:sectionSlug" element={<EditionSectionPage />} />
       <Route path="/preview" element={<ReaderPage />} />
+      <Route path="/join" element={<JoinPage />} />
       <Route
         path="*"
         element={

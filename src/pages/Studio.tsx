@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '../store';
 import type { DocKind, DocStatus, ManuscriptDoc } from '../types';
@@ -14,6 +14,7 @@ import {
   Tabs,
 } from '../components/ui';
 import { Markdown } from '../components/Markdown';
+import { mergeText, shiftPosition, spliceDiff } from '../lib/collab/textDiff';
 import { blankComment, blankDocument, now } from '../lib/factory';
 import {
   childDocuments,
@@ -396,22 +397,74 @@ function StudioEditor({ doc }: { doc: ManuscriptDoc }) {
     }
   }, [title, content, status]);
 
+  /**
+   * The stored title, text and status as this editor last saw them. A save
+   * writes only what differs from it, and a change arriving from a
+   * collaborator is merged against it (see the effect below), so two people in
+   * the same document keep each other's words.
+   */
+  const base = useRef({ title: doc.title, content: doc.content, status: doc.status });
+  const caret = useRef<{ start: number; end: number } | null>(null);
+
+  const writeChanges = useCallback(
+    (snapshot: { title: string; content: string; status: DocStatus }) => {
+      const before = base.current;
+      const written = { title: snapshot.title.trim() || 'Untitled', content: snapshot.content, status: snapshot.status };
+      // Taking in a collaborator's change also passes through here; with nothing
+      // of this person's to write, it must not bounce back as a fresh save.
+      if (written.title === before.title && written.content === before.content && written.status === before.status) return;
+      // Move the base forward by this save alone, so its echo is not merged again.
+      base.current = written;
+      update((draft) => {
+        const target = draft.documents.find((d) => d.id === doc.id);
+        if (!target) return;
+        if (written.title !== before.title) target.title = written.title;
+        if (written.content !== before.content) target.content = written.content;
+        if (written.status !== before.status) target.status = written.status;
+        target.updatedAt = now();
+        target.illustrative = false;
+      });
+    },
+    [doc.id, update],
+  );
+
+  useEffect(() => {
+    const before = base.current;
+    const incoming = { title: doc.title, content: doc.content, status: doc.status };
+    if (incoming.title === before.title && incoming.content === before.content && incoming.status === before.status) return;
+    const mine = latest.current;
+    const nextTitle = mine.title.trim() === before.title ? incoming.title : mergeText(before.title, mine.title, incoming.title);
+    const nextContent = mine.content === before.content ? incoming.content : mergeText(before.content, mine.content, incoming.content);
+    const nextStatus = mine.status === before.status ? incoming.status : mine.status;
+    base.current = incoming;
+    if (nextContent !== mine.content) {
+      const el = textarea.current;
+      if (el && document.activeElement === el) {
+        const splice = spliceDiff(mine.content, nextContent);
+        caret.current = { start: shiftPosition(el.selectionStart, splice), end: shiftPosition(el.selectionEnd, splice) };
+      }
+      setContent(nextContent);
+    }
+    if (nextTitle !== mine.title && nextTitle !== mine.title.trim()) setTitle(nextTitle);
+    if (nextStatus !== mine.status) setStatus(nextStatus);
+  }, [doc.title, doc.content, doc.status]);
+
+  // Keep the caret where the person left it when a collaborator's text lands.
+  useLayoutEffect(() => {
+    const el = textarea.current;
+    if (!caret.current || !el) return;
+    el.setSelectionRange(caret.current.start, caret.current.end);
+    caret.current = null;
+  }, [content]);
+
   const commit = useCallback(() => {
     if (!dirty.current) return;
     const snapshot = latest.current;
-    update((draft) => {
-      const target = draft.documents.find((d) => d.id === doc.id);
-      if (!target) return;
-      target.title = snapshot.title.trim() || 'Untitled';
-      target.content = snapshot.content;
-      target.status = snapshot.status;
-      target.updatedAt = now();
-      target.illustrative = false;
-    });
+    writeChanges(snapshot);
     dirty.current = false;
     setSavedState('saved');
     setLastSaved(now());
-  }, [doc.id, update]);
+  }, [writeChanges]);
 
   useEffect(() => {
     if (!mounted.current) {
@@ -426,19 +479,9 @@ function StudioEditor({ doc }: { doc: ManuscriptDoc }) {
 
   useEffect(() => {
     return () => {
-      if (dirty.current) {
-        const snapshot = latest.current;
-        update((draft) => {
-          const target = draft.documents.find((d) => d.id === doc.id);
-          if (!target) return;
-          target.title = snapshot.title.trim() || 'Untitled';
-          target.content = snapshot.content;
-          target.status = snapshot.status;
-          target.updatedAt = now();
-        });
-      }
+      if (dirty.current) writeChanges(latest.current);
     };
-  }, [doc.id, update]);
+  }, [writeChanges]);
 
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => {
