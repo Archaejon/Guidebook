@@ -5,8 +5,8 @@ to conflate:
 
 1. **A commit on `main`** — the source of truth, which CI verifies.
 2. **A tag** — `v1.2.3`, marking that exact commit as a release.
-3. **A deployment** — the built files on the `pages` branch that Codeberg Pages
-   serves.
+3. **A deployment** — the built site that GitHub Pages serves at
+   https://archaejon.github.io/Guidebook/.
 
 The deployment is automatic: any push to `main` publishes it (see
 [Deploying](#deploying)). The tag is not: it is still a deliberate step, because
@@ -26,18 +26,15 @@ bump, so the released number and its description cannot drift apart.
 
 ## Before you start
 
-- You can push to `main` and to the `pages` branch.
-- In the repository settings, **Actions** is enabled (Settings → Units → Enable
-  Actions) and the Pages webhook exists (Settings → Webhooks → Add webhook →
-  Forgejo, target `https://archaejon.codeberg.page/Guidebook/`, branch filter
-  `pages`). Without the webhook, a deploy succeeds and the site keeps returning
-  HTTP 400 — that is the single most confusing failure mode of this setup.
+- You can push to `main` on GitHub.
+- In the repository settings, **Pages → Source** is "GitHub Actions". With any
+  other source the deploy workflow fails at its deploy step.
 - `git status` is clean and you are on `main`.
 
 ## The release itself
 
 ```bash
-git pull --ff-only origin main
+git pull --ff-only github main
 
 npm ci                  # install exactly what the lockfile pins
 npm run verify          # typecheck + tests + production build
@@ -49,8 +46,8 @@ npm version minor --no-git-tag-version   # or major / patch; updates package.jso
 git add package.json package-lock.json CHANGELOG.md
 git commit -m "Release v1.1.0"
 git tag -a v1.1.0 -m "Guidebook for the Future v1.1.0"
-git push origin main
-git push origin v1.1.0
+git push github main
+git push github v1.1.0
 ```
 
 `npm version --no-git-tag-version` deliberately does not tag: the tag has to
@@ -58,9 +55,9 @@ point at the commit that contains the changelog entry, which does not exist yet
 at that moment.
 
 Pushing the tag is what publishes the release entry. The **Release** workflow
-([`.forgejo/workflows/release.yml`](.forgejo/workflows/release.yml)) reads the
+([`.github/workflows/release.yml`](.github/workflows/release.yml)) reads the
 `## [1.1.0]` section from [CHANGELOG.md](CHANGELOG.md) and creates the release on
-Codeberg, with the live site linked at the end. It refuses a tag whose version
+GitHub, with the live site linked at the end. It refuses a tag whose version
 disagrees with `package.json`, and re-running it updates the existing entry
 rather than creating a second one. To see the notes before tagging:
 
@@ -71,41 +68,24 @@ RELEASE_TAG=v1.1.0 node scripts/create-release.mjs --dry-run
 ## Deploying
 
 Publishing is automatic. Every push to `main` runs
-[`.forgejo/workflows/deploy-pages.yml`](.forgejo/workflows/deploy-pages.yml),
-which installs, typechecks, tests, builds with `--mode pages`, publishes the
-result to `pages`, then fetches that branch back and compares its git tree with
-`dist`. The run fails unless the branch holds exactly the build, so a green run
-is evidence that the published files match the commit — not merely that a script
-exited zero.
+[`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml),
+which installs, typechecks, tests, builds with `--mode pages` and deploys with
+GitHub's Pages actions. It then fetches `deploy.txt` from the live site until it
+names the commit just built, and fails if it never does. So a green run is
+evidence that the live site serves the commit, not merely that a script exited
+zero.
 
 A release therefore ends with a push to `main` and a look at the **Deploy Pages**
-run under the repository's Actions tab. It reports the source commit and the
-resulting `pages` commit.
+run under the repository's Actions tab. Then check the live site rather than
+trusting the run:
 
-For a local deploy — a host without Actions, or a checkout that must publish out
-of band — the same publisher runs directly:
-
-```bash
-bash scripts/deploy-pages.sh
-```
-
-It refuses to run on a dirty tree, so the published branch always corresponds to
-a commit, and it prints either the new `pages` commit or `published files are
-unchanged`. To re-check an already published branch against a local build without
-pushing: `node scripts/publish-pages.mjs --dist dist --verify-only`.
-
-Then check the live site rather than trusting the run:
-
-- `https://archaejon.codeberg.page/Guidebook/deploy.txt` names the commit being
-  served. Compare it with `git rev-parse main`: that is the only check that
-  proves the live site is the release, rather than a successful push to a branch
-  nothing is serving.
-- `https://archaejon.codeberg.page/Guidebook/` answers 200 and renders the home
-  page — not a blank page, and not Codeberg's 404.
-- A deep link such as `/Guidebook/studio` boots the app (either via `_redirects`
-  or the `404.html` fallback). This is the check that catches a broken base path.
-- The browser console is free of errors and the asset requests are 200s with
-  `text/css` and `text/javascript` content types.
+- `https://archaejon.github.io/Guidebook/deploy.txt` names the commit being
+  served. Compare it with `git rev-parse main`.
+- `https://archaejon.github.io/Guidebook/` answers 200 and renders the home
+  page, not a blank page.
+- A deep link such as `/Guidebook/studio` boots the app through the `404.html`
+  fallback. This is the check that catches a broken base path.
+- The browser console is free of errors and the asset requests are 200s.
 - The public edition `/Guidebook/read` shows the methods and chapters committed
   in `content/guidebook.json`, not drafts, and deep links such as
   `/Guidebook/read/physical-health/strength` and
@@ -113,26 +93,19 @@ Then check the live site rather than trusting the run:
   `/Guidebook/preview` is the browser-local reader.
 - Local data survives: open the site, add a note, reload, and confirm it is still
   there. This exercises IndexedDB on the real origin, which local builds do not.
+- A shared project connects: create one in Settings → Collaborate, open the invite
+  link in a second browser, and see each other's edits.
 
-Codeberg Pages caches small files for a few minutes, so a change deployed seconds
-ago can briefly serve the previous asset. Re-check before concluding a deploy
-failed.
+GitHub Pages' CDN caches for a few minutes, so a change deployed seconds ago can
+briefly serve the previous asset. Re-check before concluding a deploy failed.
 
 ## If a deploy is wrong
 
-If the fault is in `main`, fix it forward: the next push republishes, and the
-failed run stays visible in Actions. Do not edit the `pages` branch by hand — the
-next deploy replaces its contents.
-
-To put an earlier build back while a fix is prepared, publish from that commit
-locally. This is deliberately a stopgap: the next push to `main` republishes
-`main`, so the rollback only lasts until then unless `main` is reverted too.
-
-```bash
-git switch --detach <last-good-commit>
-bash scripts/deploy-pages.sh
-git switch main
-```
+Fix it forward, or revert the faulty commit on `main`: the next push redeploys,
+and the failed run stays visible in Actions. To redeploy an earlier commit while
+a fix is prepared, run **Deploy Pages** by hand (Actions → Deploy Pages → Run
+workflow) on a branch pointing at the last good commit. That is a stopgap: the
+next push to `main` redeploys `main`.
 
 ## After a release
 

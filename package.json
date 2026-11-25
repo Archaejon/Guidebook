@@ -5,13 +5,13 @@
   "license": "(MIT AND CC-BY-SA-4.0)",
   "version": "1.0.0",
   "type": "module",
-  "homepage": "https://archaejon.codeberg.page/Guidebook/",
+  "homepage": "https://archaejon.github.io/Guidebook/",
   "repository": {
     "type": "git",
-    "url": "https://codeberg.org/Archaejon/Guidebook.git"
+    "url": "https://github.com/Archaejon/Guidebook.git"
   },
   "bugs": {
-    "url": "https://codeberg.org/Archaejon/Guidebook/issues"
+    "url": "https://github.com/Archaejon/Guidebook/issues"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"

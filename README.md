@@ -47,34 +47,24 @@ npm run preview      # serve the built output at http://127.0.0.1:5174
 
 ## Deployment
 
-The app is a static site: upload the contents of `dist/` to any host — Codeberg Pages, GitHub Pages, Netlify, Cloudflare Pages, or a plain web server. There is no server component, and no user data leaves the browser that loaded the page.
+The app is a static site: upload the contents of `dist/` to any host — GitHub Pages, Netlify, Cloudflare Pages, or a plain web server. There is no server component, and no user data leaves the browser that loaded the page (shared projects travel browser to browser, never through the host).
 
 Two things to get right:
 
-1. **Single-page routing.** Routes are handled by `BrowserRouter`, so the host must serve `index.html` for unknown paths (SPA fallback). The Pages build writes a `_redirects` rule for that; other hosts need their own equivalent.
+1. **Single-page routing.** Routes are handled by `BrowserRouter`, so the host must serve `index.html` for unknown paths (SPA fallback). The Pages build copies the app shell to `404.html`, which GitHub Pages serves for any missing path; other hosts need their own equivalent.
 2. **Path.** `vite.config.ts` uses a base of `/` so a root deployment needs no changes. `BrowserRouter` reads `import.meta.env.BASE_URL`, so an asset base prefix automatically becomes the router basename.
 
-### Codeberg Pages
+### GitHub Pages
 
-This repository is published as a project site at **https://archaejon.codeberg.page/Guidebook/**, from the `pages` branch.
+This repository is published as a project site at **https://archaejon.github.io/Guidebook/**.
 
-Every push to `main` deploys automatically: [`.forgejo/workflows/deploy-pages.yml`](.forgejo/workflows/deploy-pages.yml) installs, typechecks, tests, builds with `--mode pages`, publishes to `pages`, then fetches the branch back and compares its git tree with `dist` — a deploy that served stale or incomplete output would fail the run instead of looking successful. Pull requests never deploy; only `main` does.
+Every push to `main` deploys automatically. [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml) installs, typechecks, tests and builds with `--mode pages`, then deploys with GitHub's official Pages actions. Finally it fetches `deploy.txt` from the live site and requires it to name the commit just built, so a deploy that served stale output fails the run instead of looking successful. Pull requests never deploy; only `main` does.
 
-For a local deploy, the same code runs from a checkout:
+`npm run build:pages` builds with `--mode pages`, which sets `base` to `/Guidebook/` in `vite.config.ts`. [scripts/pages-postbuild.mjs](scripts/pages-postbuild.mjs) then checks the shell loads assets from that prefix, copies `index.html` to `404.html` so deep links such as `/Guidebook/studio` boot the app, and writes `deploy.txt`.
 
-```bash
-bash scripts/deploy-pages.sh   # build:pages, then publish and verify the pages branch
-```
+Because the build carries `deploy.txt`, the deployment is traceable from the outside: `curl https://archaejon.github.io/Guidebook/deploy.txt` names the commit being served, and comparing it with `git rev-parse main` answers "is the live site this commit?".
 
-Both paths call [scripts/publish-pages.mjs](scripts/publish-pages.mjs), which needs no credentials of its own: locally it uses your SSH remote, and in Actions it uses the token that `actions/checkout` already persisted for the job. `node scripts/publish-pages.mjs --dist dist --verify-only` checks a published branch against a local build without pushing anything.
-
-The publisher also refuses a `dist` whose `deploy.txt` names a different commit, so a stale build in the working tree cannot be published by mistake.
-
-Because the build carries `deploy.txt`, the deployment is traceable from the outside: `curl https://archaejon.codeberg.page/Guidebook/deploy.txt` names the commit being served, and comparing it with `git rev-parse main` answers "is the live site this commit?" without trusting a push.
-
-`npm run build:pages` is the one non-obvious part: it builds with `--mode pages`, which sets `base` to `/Guidebook/` in `vite.config.ts`, and then copies `index.html` to `404.html`. That copy is a fallback for deep links, because whether Codeberg Pages applies a `_redirects` rewrite inside a project-site prefix is not documented; the shell costs 900 bytes and makes `/Guidebook/studio` work either way.
-
-Codeberg Pages only publishes a branch once a **Forgejo webhook** points at the site URL, so a first-time deploy needs this in the repository settings: **Settings → Webhooks → Add webhook → Forgejo**, target `https://archaejon.codeberg.page/Guidebook/`, branch filter `pages`. Until that webhook exists, a deploy pushes to `pages` successfully and the site still answers HTTP 400. Repository **Actions** must also be enabled (Settings → Units → Enable Actions) for the deploy workflow to run at all.
+One-time setting: **Settings → Pages → Build and deployment → Source: GitHub Actions**. GitHub Pages on a free account requires the repository to be public.
 
 ## Publishing the edition
 
@@ -189,15 +179,13 @@ Manuscript passages reference methods with `[[method:<id>|Label]]`, resolved liv
 
 ## Releases
 
-Releases are tagged `vX.Y.Z` on `main`, with the changes described in [CHANGELOG.md](CHANGELOG.md). [RELEASING.md](RELEASING.md) is the runbook: version policy, the checks to run, tagging, deploying the `pages` branch, and how to verify the live site rather than assuming a push published it. The tag is only a marker: the site is published by the deploy workflow on every push to `main`, and Codeberg serves it only once the Pages webhook exists.
+Releases are tagged `vX.Y.Z` on `main`, with the changes described in [CHANGELOG.md](CHANGELOG.md). [RELEASING.md](RELEASING.md) is the runbook: version policy, the checks to run, tagging, and how to verify the live site rather than assuming a push published it. Pushing a tag runs [`.github/workflows/release.yml`](.github/workflows/release.yml), which creates the GitHub release from that version's changelog section. The tag is only a marker: the site is deployed on every push to `main`.
 
 ## Continuous integration
 
-[`.forgejo/workflows/ci.yml`](.forgejo/workflows/ci.yml) runs on every push to `main` and every pull request on Codeberg: a `codeberg-small` shared runner starts the official `node:20-bookworm` image, checks out the repository, then runs `npm ci`, `npm audit --omit=dev`, `npm run typecheck`, `npm test` and `npm run build` as separate steps, so a failure names the phase that broke. Runs are listed under the repository's **Actions** tab.
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `main` and every pull request: on Node 20, the oldest supported line, it runs `npm ci`, `npm audit --omit=dev`, `npm run typecheck`, `npm test` and `npm run build` as separate steps, so a failure names the phase that broke. Runs are listed under the repository's **Actions** tab.
 
-This exists to keep the published branch honest. The suite is only useful if it runs without a human remembering to run it, and the typecheck catches the class of mistake (`noUnusedLocals`, unused test helpers, stale imports) that a browser smoke test will not.
-
-Repository Actions are disabled by default on Codeberg, so a maintainer has to tick **Settings → Units → Enable Actions** once before jobs will be scheduled. Codeberg's hosted runners also require the project to be public and under a free/libre licence; the code is MIT and the written content CC BY-SA 4.0, so both halves qualify.
+This exists to keep the published site honest. The suite is only useful if it runs without a human remembering to run it, and the typecheck catches the class of mistake (`noUnusedLocals`, unused test helpers, stale imports) that a browser smoke test will not.
 
 ## Behaviour worth knowing
 
@@ -218,7 +206,7 @@ The five domains, their sections, three methods (Strength Training, Reflective J
 
 ## Contributing
 
-Issues and pull requests are welcome on [Codeberg](https://codeberg.org/Archaejon/Guidebook). [CONTRIBUTING.md](CONTRIBUTING.md) covers setup, the four checks to run before opening a pull request, the test conventions, and the constraints the project will not trade away (no network at runtime, data stays in the browser, drafts never reach a published surface, no invented scholarship).
+Issues and pull requests are welcome on [GitHub](https://github.com/Archaejon/Guidebook). [CONTRIBUTING.md](CONTRIBUTING.md) covers setup, the four checks to run before opening a pull request, the test conventions, and the constraints the project will not trade away (no network at runtime, data stays in the browser, drafts never reach a published surface, no invented scholarship).
 
 ## Licence
 

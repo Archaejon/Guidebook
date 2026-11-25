@@ -31,7 +31,7 @@ React 18 + TypeScript + Vite, with `react-router-dom` for routing. If you are ch
 
 ## Before you open a pull request
 
-Run the same checks the project's CI runs (`.forgejo/workflows/ci.yml`). One command runs all of them:
+Run the same checks the project's CI runs (`.github/workflows/ci.yml`). One command runs all of them:
 
 ```bash
 npm run verify        # typecheck, then Vitest, then a production build
@@ -49,7 +49,7 @@ If you changed dependencies, also run `npm audit`, and notice that a clean audit
 
 Plus, if your change is user-visible, look at it: `npm run dev` and click through the affected page at both a wide and a narrow viewport. A green build proves the code compiles, not that the page renders.
 
-Codeberg requires Actions to be enabled on the repository before those checks run automatically, so do not assume CI will catch something you skipped locally.
+CI runs the same checks on every pull request, but a fork's own Actions may be disabled, so do not assume CI will catch something you skipped locally.
 
 Merging to `main` also publishes the site: the Deploy Pages workflow builds it, pushes the result to the `pages` branch, and verifies that the branch holds exactly that build. Pull requests only run the checks — nothing is published from a branch or a fork.
 
@@ -73,12 +73,12 @@ The suite lives in `src/lib/__tests__` and covers the pure logic only — select
 
 ## Submitting changes
 
-1. Fork the repository on [Codeberg](https://codeberg.org/Archaejon/Guidebook) with the **Fork** button, then clone your fork and keep the original as `upstream`:
+1. Fork the repository on [GitHub](https://github.com/Archaejon/Guidebook) with the **Fork** button, then clone your fork and keep the original as `upstream`:
 
    ```bash
-   git clone git@codeberg.org:<your-username>/Guidebook.git
+   git clone git@github.com:<your-username>/Guidebook.git
    cd Guidebook
-   git remote add upstream ssh://git@codeberg.org/Archaejon/Guidebook.git
+   git remote add upstream git@github.com:Archaejon/Guidebook.git
    ```
 
 2. Branch from `main`, with a name that says what it does: `fix/dangling-relationship`, `feature/export-odt`.
@@ -90,15 +90,15 @@ The suite lives in `src/lib/__tests__` and covers the pure logic only — select
    If `main` moves while you work, rebase onto it instead of merging it in: `git fetch upstream && git rebase upstream/main`.
 
 3. Commit in logical steps. Write the subject in the imperative mood and explain *why* in the body — the diff already shows what changed.
-4. Push to your fork and open a pull request against `main`. Forgejo calls it a "pull request" in the web UI; it is the same thing as a merge request.
+4. Push to your fork and open a pull request against `main`.
 5. Keep one concern per pull request. Drive-by reformatting makes a real fix impossible to review.
 
 Things that will get a pull request sent back:
 
 - committed build output (`dist/`), `node_modules/`, screenshots or `.env` files — `.gitignore` covers these, so this usually means a `git add -f` slipped in;
-- a change to the deployment (`bash scripts/deploy-pages.sh`, the `pages` branch) — publishing is the maintainer's job;
+- a change to the deployment (`.github/workflows/deploy-pages.yml`) — publishing is the maintainer's job;
 - new sample content that reads like a real citation.
 
 ## Reporting bugs
 
-Open an issue on Codeberg with what you did, what you expected, and what happened. If the project data is involved, an exported JSON backup is the most useful attachment — it reproduces the state exactly. Screenshots help for layout problems, but please check the browser console first: a runtime error is usually the actual report.
+Open an issue on GitHub with what you did, what you expected, and what happened. If the project data is involved, an exported JSON backup is the most useful attachment — it reproduces the state exactly. Screenshots help for layout problems, but please check the browser console first: a runtime error is usually the actual report.

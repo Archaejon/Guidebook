@@ -3,10 +3,10 @@ import react from '@vitejs/plugin-react';
 import { PAGES_BASE } from './scripts/pages-base.mjs';
 
 // Development and ordinary builds are served from the domain root. The
-// `pages` mode is for Codeberg Pages, which publishes this repository as a
+// `pages` mode is for GitHub Pages, which publishes this repository as a
 // project site under /Guidebook/, so assets and the router need that prefix.
-// The prefix lives in scripts/pages-base.mjs because the rewrite rule in
-// `_redirects` has to name the same path.
+// The prefix lives in scripts/pages-base.mjs because the post-build check
+// reads the same value.
 export default defineConfig(({ mode }) => ({
   base: mode === 'pages' ? PAGES_BASE : '/',
   plugins: [react()],

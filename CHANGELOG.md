@@ -75,6 +75,15 @@ when the stored shape changes, together with a migration.
 - `chapter` is reserved as a domain slug alongside `method`, so a domain cannot
   shadow `/read/chapter/…` and send its sections to the chapter route.
 
+- **The project moved from Codeberg to GitHub.** The site is now served by
+  GitHub Pages at <https://archaejon.github.io/Guidebook/>, deployed by
+  `.github/workflows/deploy-pages.yml`, which checks the live `deploy.txt` names
+  the commit it built. CI and the release workflow run on GitHub Actions, and
+  `scripts/create-release.mjs` creates GitHub releases. The Codeberg workflows,
+  the `pages`-branch publisher (`scripts/publish-pages.mjs`,
+  `scripts/deploy-pages.sh`) and the Codeberg-only `_redirects` file are gone;
+  `404.html` handles deep links.
+
 ### Fixed
 
 - **A save is only reported once it has landed.** IndexedDB writes now resolve
@@ -93,8 +102,7 @@ when the stored shape changes, together with a migration.
   links, so `javascript:`, `data:`, `mailto:` and `//host` targets render as the
   text written. The standalone export no longer links site-relative paths it
   cannot resolve.
-- The release workflow uses the Forgejo-hosted checkout action, like the CI and
-  deploy workflows.
+
 
 ## [1.0.0] — 2026-10-21
 

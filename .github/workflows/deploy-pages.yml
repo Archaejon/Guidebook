@@ -1,0 +1,89 @@
+# Builds the site and deploys it to GitHub Pages on every push to main, then
+# checks the live site is serving that commit.
+#
+# Separate from ci.yml on purpose: CI answers "is this commit good?", this
+# answers "is the site serving it?". It repeats typecheck and tests rather than
+# trusting that ci.yml ran and passed, because publishing untested code is worse
+# than a duplicated test run.
+#
+# One-time setting: Settings → Pages → Source must be "GitHub Actions".
+name: Deploy Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time, and never cancel one halfway through.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies from the lockfile
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build for the project-site prefix
+        run: npm run build:pages
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload the site
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+
+      # Independent of the deploy step: fetch deploy.txt from the live site and
+      # require it to name this commit. A deploy that silently served stale
+      # output would fail here. Pages' CDN can take a minute to catch up.
+      - name: Verify the live site serves this commit
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          expected="source-commit=${GITHUB_SHA}"
+          for attempt in $(seq 1 20); do
+            served="$(curl -fsS "${PAGE_URL%/}/deploy.txt?check=${attempt}" || true)"
+            if [ "$served" = "$expected" ]; then
+              echo "live site serves ${GITHUB_SHA}"
+              exit 0
+            fi
+            echo "attempt ${attempt}: got '${served}', waiting"
+            sleep 15
+          done
+          echo "the live site never served ${GITHUB_SHA}" >&2
+          exit 1

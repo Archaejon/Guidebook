@@ -1,11 +1,11 @@
 /**
- * Create the Forgejo release for a tag, from the changelog entry for that
+ * Create the GitHub release for a tag, from the changelog entry for that
  * version.
  *
- * Codeberg has no command-line release tool, and creating the entry by hand is
- * the step most likely to drift from what was tagged. This script runs from
- * `.forgejo/workflows/release.yml` on a `v*` tag, takes the release notes from
- * CHANGELOG.md, and refuses to publish when the tag and `package.json` disagree.
+ * Creating the entry by hand is the step most likely to drift from what was
+ * tagged. This script runs from `.github/workflows/release.yml` on a `v*` tag,
+ * takes the release notes from CHANGELOG.md, and refuses to publish when the
+ * tag and `package.json` disagree.
  *
  * It is idempotent: an identical existing release is left alone, a different one
  * is updated, so re-running a failed job does not create duplicates.
@@ -15,10 +15,10 @@
 import { readFileSync } from 'node:fs';
 
 const dryRun = process.argv.includes('--dry-run');
-const apiBase = (process.env.GITHUB_SERVER_URL ?? 'https://codeberg.org').replace(/\/$/, '');
+const apiBase = (process.env.GITHUB_API_URL ?? 'https://api.github.com').replace(/\/$/, '');
 const repo = process.env.GITHUB_REPOSITORY ?? 'Archaejon/Guidebook';
 const tag = process.env.RELEASE_TAG || process.env.GITHUB_REF_NAME || '';
-const token = process.env.FORGEJO_TOKEN ?? '';
+const token = process.env.GITHUB_TOKEN ?? '';
 
 if (!/^v\d+\.\d+\.\d+$/.test(tag)) {
   throw new Error(`expected a vMAJOR.MINOR.PATCH tag, got ${JSON.stringify(tag)}`);
@@ -77,10 +77,14 @@ if (dryRun) {
   process.exit(0);
 }
 
-if (!token) throw new Error('FORGEJO_TOKEN is empty; the release workflow needs the repository token');
+if (!token) throw new Error('GITHUB_TOKEN is empty; the release workflow needs the repository token');
 
-const endpoint = `${apiBase}/api/v1/repos/${repo}/releases`;
-const headers = { Authorization: `token ${token}`, 'Content-Type': 'application/json' };
+const endpoint = `${apiBase}/repos/${repo}/releases`;
+const headers = {
+  Authorization: `Bearer ${token}`,
+  Accept: 'application/vnd.github+json',
+  'Content-Type': 'application/json',
+};
 
 async function call(url, init = {}) {
   const response = await fetch(url, { ...init, headers });
@@ -91,7 +95,7 @@ async function call(url, init = {}) {
   return text ? JSON.parse(text) : null;
 }
 
-const existing = (await call(`${endpoint}?limit=50`)).find((release) => release.tag_name === tag);
+const existing = (await call(`${endpoint}?per_page=50`)).find((release) => release.tag_name === tag);
 if (!existing) {
   const created = await call(endpoint, { method: 'POST', body: JSON.stringify(payload) });
   console.log(`created release ${created.tag_name}: ${created.html_url}`);

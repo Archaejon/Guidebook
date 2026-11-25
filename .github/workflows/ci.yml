@@ -1,0 +1,45 @@
+# Checks every push to main and every pull request.
+#
+# Node 20 is the oldest major line the README supports, so CI catches anything
+# that would break below the Node 22 the project is developed on.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies from the lockfile
+        run: npm ci
+
+      # Only the dependencies that ship to a browser. The test runner and build
+      # tooling are never served, so an advisory in them is a development risk
+      # to review, not a reason to block the site.
+      - name: Audit shipped dependencies
+        run: npm audit --omit=dev
+
+      # Kept as separate steps so a failure names the phase that broke.
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
